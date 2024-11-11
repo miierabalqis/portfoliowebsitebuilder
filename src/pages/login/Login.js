@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
-import {useLogin} from '../../hooks/useLogin';
+import {useLogin} from '../../hooks/useLogin'; // Import the modified hook
 
 // styles
 import styles from './Login.module.css';
@@ -8,7 +8,7 @@ import styles from './Login.module.css';
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const {login, error, isPending} = useLogin();
+    const {login, loginWithGoogle, error, isPending} = useLogin();
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -79,9 +79,23 @@ export default function Login() {
                     {error && <p>{error}</p>}
 
                     <p className='mt-10 text-center text-sm text-gray-500'>
+                        or continue with
+                    </p>
+
+                    {/* Google Sign-In Button */}
+                    <div className='mt-6'>
+                        <button
+                            onClick={loginWithGoogle} // Triggers the updated loginWithGoogle function
+                            className='flex w-full justify-center rounded-md bg-white-600 px-0.5 py-2 text-xs font-semibold text-black shadow-sm hover:bg-indigo-500 focus-visible:outline-4 focus-visible:outline-solid focus-visible:outline-indigo-500'
+                        >
+                            Google
+                        </button>
+                    </div>
+
+                    <p className='mt-10 text-center text-sm text-gray-500'>
                         Not a member?
                         <Link
-                            to='/signup' // Link to the Sign Up page
+                            to='/signup'
                             className='font-semibold text-indigo-600 hover:text-indigo-500'
                         >
                             Sign up

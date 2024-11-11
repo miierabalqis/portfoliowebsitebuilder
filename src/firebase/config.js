@@ -1,6 +1,6 @@
-import firebase from 'firebase/app';
-import 'firebase/firestore';
-import 'firebase/auth';
+import firebase from 'firebase/app'; // Firebase v8.x.x
+import 'firebase/auth'; // Import auth module
+import 'firebase/firestore'; // Import Firestore module
 
 const firebaseConfig = {
     apiKey: 'AIzaSyCg3NjkzMepaqCS3d-NQg_PebHAY-IAl4U',
@@ -13,8 +13,9 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-//init service
-const projectFirestore = firebase.firestore();
+// Initialize services
 const projectAuth = firebase.auth();
+const projectFirestore = firebase.firestore();
+const googleAuthProvider = new firebase.auth.GoogleAuthProvider(); // GoogleAuthProvider for v8.x.x
 
-export {projectFirestore, projectAuth};
+export {projectAuth, projectFirestore, googleAuthProvider};
