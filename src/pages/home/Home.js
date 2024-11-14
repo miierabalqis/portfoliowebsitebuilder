@@ -1,8 +1,15 @@
-import resume from '../../images/resume2.jpg'; // Relative path from Home.js
+import resume from '../../assets/images/resume2.jpg'; // Relative path from Home.js
+import {useNavigate} from 'react-router-dom';
 
 export default function Home() {
+    const navigate = useNavigate();
+
+    const handleEditClick = () => {
+        navigate('/edit'); // Navigate to the EditForm page
+    };
+
     return (
-        <div className='h-screen bg-gray-100'>
+        <div className='min-h-screen bg-gray-100'>
             <section className='flex items-center justify-center min-h-screen text-gray-600'>
                 <div className='text-center mb-12 sm:mx-auto sm:w-full sm:max-w-lg'>
                     <h2 className='mt-10 text-center text-2xl font-bold tracking-tight text-gray-900'>
@@ -17,46 +24,39 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <div className='flex flex-wrap justify-center'>
-                        {/* Reduce outer width to make the card smaller */}
-                        <div className='p-2 sm:w-full lg:w-64'>
-                            {' '}
-                            <div className='flex flex-col h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden'>
-                                {/* Image size remains unchanged */}
+                    {/* Card */}
+                    <div
+                        className='flex flex-wrap justify-center cursor-pointer'
+                        onClick={handleEditClick} // Add the onClick event for the whole card
+                    >
+                        <div className='p-2 sm:w-full max-w-xs'>
+                            <div className='flex flex-col h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden group relative'>
+                                {/* Image */}
                                 <img
                                     src={resume}
                                     alt='Resume'
-                                    className='lg:h-100 md:h-90 w-full object-cover object-center mb-6'
+                                    className='h-74 w-full object-cover object-center transition-all duration-300 ease-in-out'
                                 />
 
-                                {/* Content remains unchanged */}
-                                <div className='p-2 hover:bg-indigo-700 hover:text-white transition duration-300 ease-in'>
-                                    {/* <h2 className='text-ase font-small text-indigo-300 mb-1'>
-                                        October 29, 2021
-                                    </h2> */}
-                                    <h1 className='text-lg font-semibold mb-3'>
-                                        Yellow Template
-                                    </h1>
-                                    <p className=' text-base leading-relaxed mb-1'>
-                                        Lorem ipsum dolor sit amet.
-                                    </p>
-                                    <div className='flex items-center flex-wrap'>
-                                        <a
-                                            href='#'
-                                            className='text-indigo-300 inline-flex items-center md:mb-2 lg:mb-0'
-                                        >
-                                            <svg
-                                                className='w-4 h-4 ml-2'
-                                                viewBox='0 0 24 24'
-                                                stroke='currentColor'
-                                                strokeWidth='2'
-                                                fill='none'
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                            ></svg>
-                                            Edit
-                                        </a>
-                                    </div>
+                                {/* Dark overlay only for the bottom part of the image */}
+                                <div className='group-hover:block hidden absolute bottom-0 left-0 w-full h-1/4 bg-black bg-opacity-75'></div>
+
+                                {/* Left-side text on hover */}
+                                <div className='group-hover:block hidden absolute bottom-0 left-0 text-white text-base font-semibold py-4 px-4 mb-4'>
+                                    Yellow Template
+                                </div>
+
+                                {/* Edit button at the bottom right */}
+                                <div className='group-hover:block hidden absolute bottom-0 right-0 bg-purple-600 text-white text-sm py-4 px-4 rounded cursor-pointer mb-5 mr-5'>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent the card click from firing
+                                            handleEditClick();
+                                        }}
+                                        className='w-full text-center font-semibold'
+                                    >
+                                        Select
+                                    </button>
                                 </div>
                             </div>
                         </div>

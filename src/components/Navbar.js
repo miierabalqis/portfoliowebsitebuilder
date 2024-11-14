@@ -75,12 +75,12 @@ export default function Navbar() {
                         {/* Conditional rendering for user's name */}
                         {user ? (
                             <>
-                                <a
-                                    href='#'
+                                <Link
+                                    to='/dashboard' // Add the link to the dashboard page here
                                     className='block px-4 py-2 text-sm text-white data-[focus]:bg-gray-100 data-[focus]:outline-none'
                                 >
                                     My Dashboard
-                                </a>
+                                </Link>
                                 <li className='block px-4 py-2 text-sm text-white'>
                                     Hello, {user.displayName || 'User'}{' '}
                                     {/* Safely access displayName */}
