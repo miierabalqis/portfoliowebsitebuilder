@@ -1,5 +1,9 @@
 import {useState, useEffect} from 'react';
-import {projectAuth, googleAuthProvider} from '../firebase/config'; // Import the Google Auth provider
+import {
+    projectAuth,
+    projectFirestore,
+    googleAuthProvider,
+} from '../firebase/config'; // Import the Google Auth provider
 import {useAuthContext} from './useAuthContext';
 
 export const useLogin = () => {
@@ -48,6 +52,23 @@ export const useLogin = () => {
 
             // login with Google using popup
             const res = await projectAuth.signInWithPopup(googleAuthProvider);
+
+            // Check if user exists in Firestore
+            const userRef = projectFirestore
+                .collection('users')
+                .doc(res.user.uid);
+            const userDoc = await userRef.get();
+
+            // If the user does not exist in Firestore, create a new user document
+            if (!userDoc.exists) {
+                // Store the new user's data in Firestore
+                await userRef.set({
+                    email: res.user.email,
+                    displayName: res.user.displayName,
+                    photoURL: res.user.photoURL, // Save user's Google photo (if available)
+                    createdAt: new Date(),
+                });
+            }
 
             // dispatch login action
             dispatch({type: 'LOGIN', payload: res.user});
