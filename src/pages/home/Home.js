@@ -53,7 +53,8 @@ export default function Home() {
 
     return (
         <div className='min-h-screen bg-gray-100'>
-            <section className='flex items-start justify-center min-h-screen text-gray-600'>
+            {/* Add padding-top to account for fixed navbar */}
+            <section className='flex items-start justify-center min-h-screen text-gray-600 pt-16'>
                 <div className='text-center mb-12 sm:mx-auto sm:w-full'>
                     <h2 className='mt-10 text-center text-2xl font-bold tracking-tight text-gray-900'>
                         Your Dream Resume, Created in an Instant!
@@ -69,7 +70,8 @@ export default function Home() {
                     {loading ? (
                         <div className='text-center'>Loading...</div>
                     ) : (
-                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+                        // Adjust the layout size displayed
+                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4'>
                             {templates.map((template) => (
                                 <div
                                     key={template.id}

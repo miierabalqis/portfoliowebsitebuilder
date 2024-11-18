@@ -84,7 +84,7 @@ export default function Dashboard() {
 
     return (
         <div className='min-h-screen bg-gray-100'>
-            <div className='container mx-auto py-8 space-y-10'>
+            <div className='container mx-auto py-8 space-y-10 pt-16'>
                 <h2 className='mt-10 text-center text-2xl font-bold tracking-tight text-gray-900'>
                     My Dashboard
                 </h2>

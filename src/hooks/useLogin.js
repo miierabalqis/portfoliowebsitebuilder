@@ -3,7 +3,9 @@ import {
     projectAuth,
     projectFirestore,
     googleAuthProvider,
-} from '../firebase/config'; // Import the Google Auth provider
+    signInWithPopup,
+    signInWithEmailAndPassword,
+} from '../firebase/config'; // Import the required Firebase methods
 import {useAuthContext} from './useAuthContext';
 
 export const useLogin = () => {
@@ -19,7 +21,8 @@ export const useLogin = () => {
 
         try {
             // login with email and password
-            const res = await projectAuth.signInWithEmailAndPassword(
+            const res = await signInWithEmailAndPassword(
+                projectAuth,
                 email,
                 password,
             );
@@ -51,7 +54,7 @@ export const useLogin = () => {
             });
 
             // login with Google using popup
-            const res = await projectAuth.signInWithPopup(googleAuthProvider);
+            const res = await signInWithPopup(projectAuth, googleAuthProvider);
 
             // Check if user exists in Firestore
             const userRef = projectFirestore

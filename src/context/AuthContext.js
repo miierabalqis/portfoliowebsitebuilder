@@ -1,8 +1,9 @@
 import {createContext, useReducer, useEffect} from 'react';
-import {projectAuth} from '../firebase/config';
+import {projectAuth} from '../firebase/config'; // Make sure you import your Firebase auth instance
 
 export const AuthContext = createContext();
 
+// Reducer function to handle authentication state changes
 export const authReducer = (state, action) => {
     switch (action.type) {
         case 'LOGIN':
@@ -25,11 +26,13 @@ export const AuthContextProvider = ({children}) => {
     useEffect(() => {
         const unsub = projectAuth.onAuthStateChanged((user) => {
             dispatch({type: 'AUTH_IS_READY', payload: user});
-            unsub();
         });
+
+        // Don't unsubscribe immediately; let the listener stay active
+        return unsub; // Return the unsubscribe function for cleanup
     }, []);
 
-    console.log('AuthContext state:', state);
+    console.log('AuthContext state:', state); // Debugging state changes
 
     return (
         <AuthContext.Provider value={{...state, dispatch}}>

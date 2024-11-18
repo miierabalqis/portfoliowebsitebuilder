@@ -1,6 +1,11 @@
 import {initializeApp} from 'firebase/app';
+import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithEmailAndPassword,
+} from 'firebase/auth';
 import {getFirestore} from 'firebase/firestore';
-import {getAuth, GoogleAuthProvider} from 'firebase/auth';
 
 const firebaseConfig = {
     apiKey: 'AIzaSyCg3NjkzMepaqCS3d-NQg_PebHAY-IAl4U',
@@ -20,4 +25,10 @@ const projectFirestore = getFirestore(app); // Use getFirestore instead of fireb
 const googleAuthProvider = new GoogleAuthProvider(); // GoogleAuthProvider from the auth module
 
 // Export the services for use in your app
-export {projectAuth, projectFirestore, googleAuthProvider};
+export {
+    projectAuth,
+    projectFirestore,
+    googleAuthProvider,
+    signInWithPopup,
+    signInWithEmailAndPassword,
+};

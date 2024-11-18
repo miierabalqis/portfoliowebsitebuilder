@@ -8,6 +8,7 @@ import Signup from './pages/signup/Signup';
 import Navbar from './components/Navbar';
 import EditResume from './pages/resume/edit';
 import Dashboard from './pages/dashboard/Dashboard';
+import Profile from './pages/profile/Profile';
 
 function App() {
     const {authIsReady, user} = useAuthContext();
@@ -46,6 +47,13 @@ function App() {
                             path='/dashboard'
                             element={
                                 user ? <Dashboard /> : <Navigate to='/login' />
+                            }
+                        />
+                        {/* Protect Profile route */}
+                        <Route
+                            path='/profile'
+                            element={
+                                user ? <Profile /> : <Navigate to='/login' />
                             }
                         />
                     </Routes>
