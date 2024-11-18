@@ -6,9 +6,12 @@ import Home from './pages/home/Home';
 import Login from './pages/login/Login';
 import Signup from './pages/signup/Signup';
 import Navbar from './components/Navbar';
-import EditResume from './pages/resume/edit';
 import Dashboard from './pages/dashboard/Dashboard';
 import Profile from './pages/profile/Profile';
+import EditResume from './pages/resume/edit/ResumeForm';
+// import Template from './pages/resume/templates/template';
+import Form from './pages/form/Form';
+import TempAmit from './pages/resume/templates/TempAmit';
 
 function App() {
     const {authIsReady, user} = useAuthContext();
@@ -55,6 +58,20 @@ function App() {
                             element={
                                 user ? <Profile /> : <Navigate to='/login' />
                             }
+                        />
+                        {/* <Route
+                            path='/template'
+                            element={
+                                user ? <Template /> : <Navigate to='/login' />
+                            }
+                        /> */}
+                        <Route
+                            path='/form'
+                            element={user ? <Form /> : <Navigate to='/login' />}
+                        />
+                        <Route
+                            path='/templates/tempamit'
+                            element={<TempAmit />}
                         />
                     </Routes>
                 </BrowserRouter>

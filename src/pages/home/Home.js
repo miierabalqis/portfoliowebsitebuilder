@@ -51,6 +51,10 @@ export default function Home() {
         navigate('/edit'); // Navigate to the EditForm page
     };
 
+    const handleTemplateClick = () => {
+        navigate('/template'); // Navigate to the EditForm page
+    };
+
     return (
         <div className='min-h-screen bg-gray-100'>
             {/* Add padding-top to account for fixed navbar */}
@@ -64,6 +68,10 @@ export default function Home() {
                             Select a resume template below to start building
                             your resume
                         </h1>
+                    </div>
+
+                    <div>
+                        <button onClick={handleTemplateClick}>Template</button>
                     </div>
 
                     {/* Conditionally show a loading spinner while templates are being fetched */}

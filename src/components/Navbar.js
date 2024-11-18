@@ -1,4 +1,4 @@
-import {Link} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {useAuthContext} from '../hooks/useAuthContext';
 import {useLogout} from '../hooks/useLogout';
 import {Bars3Icon, XMarkIcon} from '@heroicons/react/24/outline';
@@ -26,6 +26,10 @@ function classNames(...classes) {
 export default function Navbar() {
     const {logout} = useLogout();
     const {user} = useAuthContext(); // Get user from context (auth state)
+    const navigate = useNavigate();
+    const handleFormClick = () => {
+        navigate('/form'); // Navigate to the EditForm page
+    };
 
     return (
         <Disclosure
@@ -76,6 +80,11 @@ export default function Navbar() {
                                         {item.name}
                                     </Link>
                                 ))}
+                            </div>
+                        </div>
+                        <div className='hidden sm:ml-6 sm:block'>
+                            <div className='flex space-x-4 bg-gray-900 text-white rounded-md px-3 py-2 text-sm font-medium'>
+                                <button onClick={handleFormClick}>Form</button>
                             </div>
                         </div>
                     </div>
