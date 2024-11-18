@@ -46,7 +46,7 @@ export default function Profile() {
                 <h2 className='text-2xl font-bold text-gray-900'>Profile</h2>
                 <div className='mt-6'>
                     <div className='text-gray-700'>
-                        <strong>Name:</strong>{' '}
+                        <strong>Name Name:</strong>{' '}
                         {userProfile?.displayName || 'N/A'}
                     </div>
                     <div className='text-gray-700 mt-2'>
