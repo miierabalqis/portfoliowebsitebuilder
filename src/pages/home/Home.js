@@ -1,117 +1,208 @@
 import React, {useState, useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
+import {
+    doc,
+    setDoc,
+    getDocs,
+    getDoc,
+    collection,
+    onSnapshot,
+} from 'firebase/firestore';
+import {getAuth} from 'firebase/auth';
 import {projectFirestore} from '../../firebase/config'; // Import Firestore
-import {collection, onSnapshot} from 'firebase/firestore'; // Firestore real-time listener
+import {projectFirestore as db} from '../../firebase/config';
+import {getPublicUrl} from '../../firebase/firebaseStorageUtils'; // Import utility for public URL
+import {serverTimestamp} from 'firebase/firestore';
+import {
+    createNewResume,
+    getUserResumesForTemplate,
+} from '../../firebase/helpers';
 
 export default function Home() {
     const navigate = useNavigate();
     const [templates, setTemplates] = useState([]);
-    const [loading, setLoading] = useState(true); // State to track loading status
+    const [resumeId, setResumeId] = useState(null);
+    const [templateId, setTemplateId] = useState(null);
+    const [loading, setLoading] = useState(true); // State to track loading
+    const [filteredTemplates, setFilteredTemplates] = useState([]); // Filtered templates based on category
+    const [selectedCategory, setSelectedCategory] = useState('All Templates'); // Default category
+    const [categories, setCategories] = useState([]); // Categories for filtering
 
-    // Fetch templates from Firestore in real-time
+    // Fetch templates from Firestore with resolved image URLs
     useEffect(() => {
         const unsubscribe = onSnapshot(
-            collection(projectFirestore, 'templates'), // Listen to the 'templates' collection
-            (querySnapshot) => {
+            collection(projectFirestore, 'templates'),
+            async (querySnapshot) => {
                 const templatesList = [];
+                const fetchPromises = [];
 
-                // Loop through each template document
                 querySnapshot.forEach((docSnapshot) => {
-                    // For each template document, get the data
                     const templateData = docSnapshot.data();
+                    const storagePath = templateData.imageUrl;
 
-                    // Make sure 'imageUrl' field exists
-                    const imageUrl =
-                        templateData.imageUrl ||
-                        '/path-to-placeholder-image.jpg'; // Default placeholder if not found
-
-                    // Store the template data (including imageUrl)
-                    templatesList.push({
-                        id: docSnapshot.id,
-                        name: templateData.name || 'Unknown Template', // Assuming there's a 'name' field as well
-                        imageUrl: imageUrl,
-                    });
+                    if (storagePath) {
+                        fetchPromises.push(
+                            getPublicUrl(storagePath)
+                                .then((url) => ({
+                                    id: docSnapshot.id,
+                                    name:
+                                        templateData.name || 'Unknown Template',
+                                    imageUrl: url || '', // Fallback for missing image
+                                    category:
+                                        templateData.category ||
+                                        'Uncategorized', // Fallback for missing category
+                                }))
+                                .catch((error) => {
+                                    console.error(
+                                        `Error fetching public URL for ${storagePath}:`,
+                                        error,
+                                    );
+                                    return null;
+                                }),
+                        );
+                    }
                 });
 
-                // Update state with the fetched templates
-                setTemplates(templatesList);
-                setLoading(false); // Stop loading when done
+                // Resolve promises and update state
+                try {
+                    const resolvedTemplates = await Promise.all(fetchPromises);
+                    const validTemplates = resolvedTemplates.filter(Boolean); // Remove failed fetches
+                    setTemplates(validTemplates);
+                    setFilteredTemplates(validTemplates); // Initially show all
+                    setLoading(false);
+                } catch (error) {
+                    console.error('Error resolving templates:', error);
+                    setLoading(false);
+                }
             },
             (error) => {
-                console.error('Error fetching templates: ', error);
+                console.error('Error fetching templates:', error);
                 setLoading(false);
             },
         );
 
-        // Clean up listener when component unmounts
-        return () => unsubscribe();
-    }, []); // This effect runs only once when the component mounts
+        return () => unsubscribe(); // Cleanup on unmount
+    }, []);
 
-    const handleEditClick = () => {
-        navigate('/edit'); // Navigate to the EditForm page
+    // Fetch categories for tabs
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const querySnapshot = await getDocs(
+                    collection(projectFirestore, 'templates'),
+                );
+                const categoriesSet = new Set(['All Templates']);
+                querySnapshot.forEach((doc) => {
+                    const templateData = doc.data();
+                    if (templateData.category)
+                        categoriesSet.add(templateData.category);
+                });
+                setCategories([...categoriesSet]);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    // Handle tab click for filtering
+    const handleTabClick = (category) => {
+        setSelectedCategory(category);
+        setFilteredTemplates(
+            category === 'All Templates'
+                ? templates
+                : templates.filter(
+                      (template) => template.category === category,
+                  ),
+        );
     };
 
-    const handleTemplateClick = () => {
-        navigate('/template'); // Navigate to the EditForm page
+    const handleTemplateClick = async (templateId) => {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (user) {
+            try {
+                // Create a new resume document
+                const newResumeId = await createNewResume(
+                    user.email,
+                    templateId,
+                );
+                navigate(`/form/${templateId}/${newResumeId}`);
+                return newResumeId;
+            } catch (error) {
+                console.error('Error handling template selection:', error);
+                return null;
+            }
+        } else {
+            console.error('No user is signed in!');
+            return null;
+        }
     };
 
     return (
-        <div className='min-h-screen bg-gray-100'>
-            {/* Add padding-top to account for fixed navbar */}
-            <section className='flex items-start justify-center min-h-screen text-gray-600 pt-16'>
+        <div className='min-h-screen bg-amber-50'>
+            <section className='flex items-start justify-center min-h-screen text-gray-600 pt-20'>
                 <div className='text-center mb-12 sm:mx-auto sm:w-full'>
-                    <h2 className='mt-10 text-center text-2xl font-bold tracking-tight text-gray-900'>
+                    <h2 className='mt-10 text-center text-5xl font-bold tracking-tight text-gray-900'>
                         Your Dream Resume, Created in an Instant!
                     </h2>
                     <div className='mb-20'>
-                        <h1 className='block text-sm text-center font-medium text-gray-900'>
+                        <h1 className='block text-base text-center font-medium text-gray-900 pt-5'>
                             Select a resume template below to start building
                             your resume
                         </h1>
                     </div>
 
-                    <div>
-                        <button onClick={handleTemplateClick}>Template</button>
+                    {/* Tabs */}
+                    <div className='flex justify-center'>
+                        <div className='w-full max-w-4xl border-b border-gray-200'>
+                            <ul className='flex flex-wrap -mb-px text-sm font-medium text-center text-gray-500 justify-center'>
+                                {categories.map((category) => (
+                                    <li key={category} className='me-2'>
+                                        <a
+                                            href='#'
+                                            onClick={() =>
+                                                handleTabClick(category)
+                                            }
+                                            className={`inline-flex items-center justify-center p-4 text-base border-b-4 border-transparent rounded-t-lg hover:text-gray-600 hover:border-sky-500 hover:text-sky-500 group ${
+                                                selectedCategory === category
+                                                    ? 'border-sky-500 text-sky-500'
+                                                    : ''
+                                            }`}
+                                        >
+                                            {category}
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
 
-                    {/* Conditionally show a loading spinner while templates are being fetched */}
+                    {/* Loading Spinner */}
                     {loading ? (
                         <div className='text-center'>Loading...</div>
                     ) : (
-                        // Adjust the layout size displayed
-                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4'>
-                            {templates.map((template) => (
+                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-10'>
+                            {filteredTemplates.map((template) => (
                                 <div
                                     key={template.id}
                                     className='w-full p-2 ml-14'
-                                    onClick={handleEditClick} // Navigate to the edit page when clicked
+                                    onClick={() =>
+                                        handleTemplateClick(template.id)
+                                    }
                                 >
                                     <div className='flex flex-col h-full border-2 border-gray-200 border-opacity-60 rounded-lg overflow-hidden group relative'>
-                                        {/* Image */}
                                         <img
-                                            src={template.imageUrl} // Display the imageUrl from Firestore
+                                            src={template.imageUrl}
                                             alt={template.name}
                                             className='h-74 w-full object-cover object-center transition-all duration-300 ease-in-out'
                                         />
-
-                                        {/* Dark overlay for the bottom part of the image */}
                                         <div className='group-hover:block hidden absolute bottom-0 left-0 w-full h-1/4 bg-black bg-opacity-75'></div>
-
-                                        {/* Template name on hover */}
                                         <div className='group-hover:block hidden absolute bottom-0 left-0 text-white text-base font-semibold py-4 px-4 mb-4'>
-                                            {template.name ||
-                                                'Unknown Template'}
+                                            {template.name}
                                         </div>
-
-                                        {/* Select button at the bottom right */}
                                         <div className='group-hover:block hidden absolute bottom-0 right-0 bg-purple-600 text-white text-sm py-4 px-4 rounded cursor-pointer mb-5 mr-5'>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Prevent the card click from firing
-                                                    handleEditClick();
-                                                }}
-                                                className='w-full text-center font-semibold'
-                                            >
+                                            <button className='w-full text-center font-semibold'>
                                                 Select
                                             </button>
                                         </div>

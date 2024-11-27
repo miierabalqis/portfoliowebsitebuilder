@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ReactToPdf from 'react-to-pdf';
+//Preview
+
+import React, {useState, useEffect, useRef} from 'react';
 
 const A4_WIDTH = 595; // A4 width in pixels
 const A4_HEIGHT = 842; // A4 height in pixels
 
-function Preview({ resumeData, renderFormattedText }) {
+function Preview({resumeData, renderFormattedText}) {
     const contentRef = useRef(null);
     const [pages, setPages] = useState([[]]);
 
@@ -26,11 +27,11 @@ function Preview({ resumeData, renderFormattedText }) {
 
         // Profile Photo Section
         const profilePhotoSection = (
-            <div className="my-4 text-center">
+            <div className='my-4 text-center'>
                 {resumeData.profilePhoto && (
                     <img
                         src={resumeData.profilePhoto}
-                        alt="Profile"
+                        alt='Profile'
                         style={{
                             width: '100px',
                             height: '100px',
@@ -47,23 +48,25 @@ function Preview({ resumeData, renderFormattedText }) {
 
         // Personal Details Section
         const personalSection = (
-            <div className="my-4">
-                <h3 className="text-xl font-bold">{resumeData.personalDetail.name}</h3>
-                <p className="text-sm">{resumeData.personalDetail.email}</p>
-                <p className="text-sm">{resumeData.personalDetail.phone}</p>
-                <p className="text-sm">{resumeData.personalDetail.address}</p>
+            <div className='my-4'>
+                <h3 className='text-xl font-bold'>
+                    {resumeData.personalDetail.name}
+                </h3>
+                <p className='text-sm'>{resumeData.personalDetail.email}</p>
+                <p className='text-sm'>{resumeData.personalDetail.phone}</p>
+                <p className='text-sm'>{resumeData.personalDetail.address}</p>
             </div>
         );
         currentHeight += estimateSectionHeight('personal');
         currentPage.push(personalSection);
 
         // Line to separate the summary section
-        currentPage.push(<hr className="my-4 border-t-2 border-gray-300" />);
+        currentPage.push(<hr className='my-4 border-t-2 border-gray-300' />);
 
         // Summary Section
         const summarySection = (
-            <div className="my-4">
-                <h4 className="text-lg font-bold">Summary</h4>
+            <div className='my-4'>
+                <h4 className='text-lg font-bold'>Summary</h4>
                 <div>{renderFormattedText(resumeData.summary)}</div>
             </div>
         );
@@ -71,18 +74,24 @@ function Preview({ resumeData, renderFormattedText }) {
         currentPage.push(summarySection);
 
         // Line to separate the summary section
-        currentPage.push(<hr className="my-4 border-t-2 border-gray-300" />);
+        currentPage.push(<hr className='my-4 border-t-2 border-gray-300' />);
 
         // Experience Section
         const experienceSection = (
-            <div className="my-4">
-                <h4 className="text-lg font-bold">Experience</h4>
+            <div className='my-4'>
+                <h4 className='text-lg font-bold'>Experience</h4>
                 {resumeData.experience.map((exp, index) => (
-                    <div key={index} className="my-4">
-                        <h5 className="text-base font-semibold mt-4">{exp.company}</h5>
-                        <p className="text-sm">Position: {exp.position}</p>
-                        <p className="text-sm">Period: {exp.startDate} - {exp.endDate || 'Present'}</p>
-                        <p className="text-sm">{renderFormattedText(exp.description)}</p>
+                    <div key={index} className='my-4'>
+                        <h5 className='text-base font-semibold mt-4'>
+                            {exp.company}
+                        </h5>
+                        <p className='text-sm'>Position: {exp.position}</p>
+                        <p className='text-sm'>
+                            Period: {exp.startDate} - {exp.endDate || 'Present'}
+                        </p>
+                        <p className='text-sm'>
+                            {renderFormattedText(exp.description)}
+                        </p>
                     </div>
                 ))}
             </div>
@@ -91,17 +100,21 @@ function Preview({ resumeData, renderFormattedText }) {
         currentPage.push(experienceSection);
 
         // Line to separate the summary section
-        currentPage.push(<hr className="my-4 border-t-2 border-gray-300" />);
+        currentPage.push(<hr className='my-4 border-t-2 border-gray-300' />);
 
         // Education Section
         const educationSection = (
-            <div className="my-4">
-                <h4 className="text-lg font-bold">Education</h4>
+            <div className='my-4'>
+                <h4 className='text-lg font-bold'>Education</h4>
                 {resumeData.educationDetail.map((edu, index) => (
-                    <div key={index} className="my-4">
-                        <h5 className="text-base font-semibold">{edu.institution}</h5>
-                        <p className="text-sm">Course: {edu.course}</p>
-                        <p className="text-sm">{edu.startDate} - {edu.endDate || 'Present'}</p>
+                    <div key={index} className='my-4'>
+                        <h5 className='text-base font-semibold'>
+                            {edu.institution}
+                        </h5>
+                        <p className='text-sm'>Course: {edu.course}</p>
+                        <p className='text-sm'>
+                            {edu.startDate} - {edu.endDate || 'Present'}
+                        </p>
                     </div>
                 ))}
             </div>
@@ -110,13 +123,15 @@ function Preview({ resumeData, renderFormattedText }) {
         currentPage.push(educationSection);
 
         // Line to separate the summary section
-        currentPage.push(<hr className="my-4 border-t-2 border-gray-300" />);
+        currentPage.push(<hr className='my-4 border-t-2 border-gray-300' />);
 
         // Skills Section
         const skillsSection = (
-            <div className="my-4">
-                <h4 className="text-lg font-bold">Skills</h4>
-                <p className="text-sm">{renderFormattedText(resumeData.skills)}</p>
+            <div className='my-4'>
+                <h4 className='text-lg font-bold'>Skills</h4>
+                <p className='text-sm'>
+                    {renderFormattedText(resumeData.skills)}
+                </p>
             </div>
         );
         currentHeight += estimateSectionHeight('skills');
@@ -134,7 +149,10 @@ function Preview({ resumeData, renderFormattedText }) {
                 let currentPageHeight = 0;
 
                 // Add sections to the current page while there is space left
-                while (currentPageHeight < A4_HEIGHT && contentIndex < currentPage.length) {
+                while (
+                    currentPageHeight < A4_HEIGHT &&
+                    contentIndex < currentPage.length
+                ) {
                     const section = currentPage[contentIndex];
                     page.push(section);
                     currentPageHeight += estimateSectionHeight('personal'); // Adjust for accurate height
@@ -154,17 +172,17 @@ function Preview({ resumeData, renderFormattedText }) {
     }, [resumeData, renderFormattedText]);
 
     return (
-        <div className="text-sm text-gray-900 px-10 py-6">
-            <div className="flex flex-col items-center">
+        <div className='text-sm text-gray-900 px-10 py-6'>
+            <div className='flex flex-col items-center'>
                 {/* Render all pages */}
                 {pages.map((page, index) => (
                     <div
                         key={index}
-                        className="border border-gray-300 p-5 rounded-lg my-4 overflow-hidden"
-                        style={{ 
-                            height: A4_HEIGHT, 
-                            width: A4_WIDTH,  // Fix the width to A4 size
-                            pageBreakAfter: 'always' // Ensure each page starts on a new page when printing
+                        className='border border-gray-300 p-5 rounded-lg my-4 overflow-hidden'
+                        style={{
+                            height: A4_HEIGHT,
+                            width: A4_WIDTH, // Fix the width to A4 size
+                            pageBreakAfter: 'always', // Ensure each page starts on a new page when printing
                         }}
                     >
                         {page.map((section, idx) => (
@@ -177,8 +195,8 @@ function Preview({ resumeData, renderFormattedText }) {
                 {/* <div className="mt-4">
                     <ReactToPdf targetRef={contentRef} filename="resume.pdf">
                         {({ toPdf }) => (
-                            <button 
-                                onClick={toPdf} 
+                            <button
+                                onClick={toPdf}
                                 className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-200"
                             >
                                 Download Resume as PDF

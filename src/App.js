@@ -1,5 +1,6 @@
 import {BrowserRouter, Route, Routes, Navigate} from 'react-router-dom';
 import {useAuthContext} from './hooks/useAuthContext';
+import React, {useEffect} from 'react';
 
 // pages & components
 import Home from './pages/home/Home';
@@ -9,9 +10,11 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/dashboard/Dashboard';
 import Profile from './pages/profile/Profile';
 import EditResume from './pages/resume/edit/ResumeForm';
-// import Template from './pages/resume/templates/template';
 import Form from './pages/form/Form';
-import TempAmit from './pages/resume/templates/TempAmit';
+import TempAmit from './pages/resume/template/TempAmit';
+import Template from './pages/resume/template/template_1/template';
+import InpTemp from './pages/resume/template/template_1/InpTemp';
+// import DisplayTemplate from './pages/resume/template/displayTemplate';
 
 function App() {
     const {authIsReady, user} = useAuthContext();
@@ -52,22 +55,38 @@ function App() {
                                 user ? <Dashboard /> : <Navigate to='/login' />
                             }
                         />
-                        {/* Protect Profile route */}
                         <Route
                             path='/profile'
                             element={
                                 user ? <Profile /> : <Navigate to='/login' />
                             }
                         />
-                        {/* <Route
+                        <Route
                             path='/template'
                             element={
                                 user ? <Template /> : <Navigate to='/login' />
                             }
+                        />
+                        <Route
+                            path='/form/:templateId/:resumeId'
+                            element={user ? <Form /> : <Navigate to='/login' />}
+                        />
+                        {/* Update the DisplayTemplate route to accept a templateId */}
+                        {/* <Route
+                            path='/displayTemplate/:templateId'
+                            element={
+                                user ? (
+                                    <DisplayTemplate />
+                                ) : (
+                                    <Navigate to='/login' />
+                                )
+                            }
                         /> */}
                         <Route
-                            path='/form'
-                            element={user ? <Form /> : <Navigate to='/login' />}
+                            path='/InpTemp/:templateId'
+                            element={
+                                user ? <InpTemp /> : <Navigate to='/login' />
+                            }
                         />
                         <Route
                             path='/templates/tempamit'
