@@ -14,7 +14,10 @@ import Form from './pages/form/Form';
 import TempAmit from './pages/resume/template/TempAmit';
 import Template from './pages/resume/template/template_1/template';
 import InpTemp from './pages/resume/template/template_1/InpTemp';
-// import DisplayTemplate from './pages/resume/template/displayTemplate';
+import DashboardForm from './pages/dashboard/DashboardForm';
+import DashboardResumeForm from './pages/dashboard/DashboardResumeForm';
+import Landing from './pages/landing/Landing';
+// import DisplayTemplate from './pages/resume/teplate/displayTemplate';
 
 function App() {
     const {authIsReady, user} = useAuthContext();
@@ -25,8 +28,9 @@ function App() {
                 <BrowserRouter>
                     <Navbar />
                     <Routes>
+                        <Route path='/' element={<Landing />} />
                         <Route
-                            path='/'
+                            path='/home'
                             element={user ? <Home /> : <Navigate to='/login' />}
                         />
                         <Route
@@ -55,6 +59,27 @@ function App() {
                                 user ? <Dashboard /> : <Navigate to='/login' />
                             }
                         />
+                        <Route
+                            path='/dashboardform/:templateId/:resumeId'
+                            element={
+                                user ? (
+                                    <DashboardForm />
+                                ) : (
+                                    <Navigate to='/login' />
+                                )
+                            }
+                        />
+                        <Route
+                            path='/dashboardresumeform/:templateId/:resumeId'
+                            element={
+                                user ? (
+                                    <DashboardResumeForm />
+                                ) : (
+                                    <Navigate to='/login' />
+                                )
+                            }
+                        />
+
                         <Route
                             path='/profile'
                             element={

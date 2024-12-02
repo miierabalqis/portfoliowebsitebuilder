@@ -1,35 +1,32 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {doc, getDoc} from 'firebase/firestore';
 import {projectFirestore} from '../../firebase/config';
-import {getAuth} from 'firebase/auth';
-import Sidebar from './Sidebar';
-import ResumeForm from '../resume/edit/ResumeForm';
+import {getAuth, onAuthStateChanged} from 'firebase/auth';
+import Sidebar from '../form/Sidebar';
 import InpTemp from '../resume/template/template_1/InpTemp';
+import DashboardResumeForm from './DashboardResumeForm';
 
-function Form() {
+const DashboardForm = () => {
     const navigate = useNavigate();
     const sidebarRef = useRef(null);
     const {templateId, resumeId} = useParams();
-
-    const [isLoading, setIsLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [resumeData, setResumeData] = useState(null);
 
     useEffect(() => {
         const auth = getAuth();
-        const user = auth.currentUser;
-
-        const validateAndFetchResume = async () => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 setError('User not authenticated');
-                navigate('/');
+                navigate('/login');
                 return;
             }
 
             if (!templateId || !resumeId) {
                 setError('Missing template or resume ID');
-                navigate('/');
+                navigate('/dashboard');
                 return;
             }
 
@@ -40,32 +37,36 @@ function Form() {
 
                 if (!resumeDoc.exists()) {
                     setError('Resume not found');
-                    navigate('/');
+                    navigate('/dashboard');
                     return;
                 }
 
                 // Validate that the resume belongs to the current user
                 const resumeData = resumeDoc.data();
-                if (resumeData.userId !== user.email) {
+                if (resumeData.userId !== user.uid) {
                     setError('Unauthorized access');
-                    navigate('/');
+                    navigate('/dashboard');
                     return;
                 }
 
                 setResumeData(resumeData);
-                setIsLoading(false);
+                setLoading(false);
             } catch (error) {
                 console.error('Error fetching resume:', error);
                 setError('Failed to load resume');
-                setIsLoading(false);
+                setLoading(false);
             }
-        };
+        });
 
-        validateAndFetchResume();
+        return () => unsubscribe();
     }, [templateId, resumeId, navigate]);
 
-    if (isLoading) {
-        return <div className='spinner'>Loading...</div>;
+    if (loading) {
+        return (
+            <div className='flex justify-center items-center min-h-screen'>
+                <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600'></div>
+            </div>
+        );
     }
 
     if (error) {
@@ -73,10 +74,10 @@ function Form() {
             <div className='text-red-600 p-4'>
                 Error: {error}
                 <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/dashboard')}
                     className='ml-4 bg-blue-500 text-white px-4 py-2 rounded'
                 >
-                    Return to Home
+                    Return to Dashboard
                 </button>
             </div>
         );
@@ -84,28 +85,22 @@ function Form() {
 
     return (
         <div className='flex min-h-screen bg-gray-50 dark:bg-gray-900'>
-            {/* Sidebar */}
             <div ref={sidebarRef} className='min-h-screen'>
                 <Sidebar />
             </div>
 
-            {/* Main Form Section */}
-            <div className='flex-1 bg-white pl-28'>
-                <ResumeForm
-                    templateId={templateId}
-                    resumeId={resumeId}
-                    initialData={resumeData}
+            <div className='flex-1 bg-white pl-32 pt-15'>
+                <DashboardResumeForm
+                    resumeData={resumeData}
+                    onUpdate={setResumeData}
                 />
             </div>
 
-            {/* Preview Section */}
-            <div className='flex-1 bg-white pl-28 w-full md:w-1/2 bg-gray-50 p-4'>
-                <InpTemp resumeData={resumeData} />
-                {templateId === 'template_1' && <InpTemp />}
-                {/* Add conditions for other templates */}
+            <div className='flex-1 bg-amber-50 pl-26 w-full md:w-1/2 bg-amber-50 p-4'>
+                <InpTemp data={resumeData} />
             </div>
         </div>
     );
-}
+};
 
-export default Form;
+export default DashboardForm;

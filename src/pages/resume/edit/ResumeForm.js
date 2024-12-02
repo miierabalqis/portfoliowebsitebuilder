@@ -1,18 +1,25 @@
 import React, {useState, useEffect} from 'react';
 // import {saveResumeData} from '../../../firebase/helpers';
-import {projectAuth, projectStorage} from '../../../firebase/config';
+import {projectAuth} from '../../../firebase/config';
 // import {ref, uploadBytes, getDownloadURL} from 'firebase/storage';
-import InpTemp from '../template/template_1/InpTemp';
 import ProfilePhotoUpload from '../../resume/edit/PhotoUpload';
-import {addDoc, collection} from 'firebase/firestore';
 import {doc, getDoc, setDoc} from 'firebase/firestore';
-import {getAuth} from 'firebase/auth';
 import {projectFirestore as db} from '../../../firebase/config';
 import {useParams} from 'react-router-dom';
-import {serverTimestamp} from 'firebase/firestore'; // Ensure this points to your Firestore instance
+import {serverTimestamp} from 'firebase/firestore';
+
+// Import separate section
+// import ProfilePhoto from './section/ProfilePhoto';
+import PersonalDetails from './section/PersonalDetails';
+import Summary from './section/SummaryForm';
+import Experience from './section/ExperienceForm';
+import Education from './section/EducationForm';
+import Skills from './section/Skills';
 
 function ResumeForm() {
     const {templateId, resumeId} = useParams();
+    const [saveStatus, setSaveStatus] = useState('');
+
     const [resumeData, setResumeData] = useState({
         profilePhoto: null,
         personalDetail: {
@@ -32,11 +39,19 @@ function ResumeForm() {
             },
         ],
         educationDetail: [
-            {institution: '', course: '', startDate: '', endDate: ''},
+            {
+                level: '',
+                institution: '',
+                course: '',
+                result: '',
+                startDate: '',
+                endDate: '',
+            },
         ],
         skills: [],
     });
 
+    const [currentStep, setCurrentStep] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState(null);
     // const [templateId, setTemplateId] = useState(null); // Store selected templateId
@@ -105,25 +120,52 @@ function ResumeForm() {
                           endDate: '',
                           description: '',
                       }
-                    : {institution: '', course: '', startDate: '', endDate: ''},
+                    : {
+                          level: '',
+                          institution: '',
+                          course: '',
+                          result: '',
+                          startDate: '',
+                          endDate: '',
+                      },
             ],
         }));
     };
 
-    const handleSkillsChange = (e) => {
-        const skills = e.target.value.split(',').map((skill) => skill.trim());
-        setResumeData((prev) => ({...prev, skills}));
+    const removeEntry = (section, index) => {
+        setResumeData((prev) => ({
+            ...prev,
+            [section]: prev[section].filter((_, i) => i !== index),
+        }));
     };
 
-    const handleEducationChange = (index, field, value) => {
-        setResumeData((prev) => {
-            const updatedEducation = [...prev.educationDetail];
-            updatedEducation[index] = {
-                ...updatedEducation[index],
-                [field]: value,
-            };
-            return {...prev, educationDetail: updatedEducation};
-        });
+    // const handleSkillsChange = (e) => {
+    //     const skills = e.target.value.split(',').map((skill) => skill.trim());
+    //     setResumeData((prev) => ({...prev, skills}));
+    // };
+
+    // const handleEducationChange = (index, field, value) => {
+    //     setResumeData((prev) => {
+    //         const updatedEducation = [...prev.educationDetail];
+    //         updatedEducation[index] = {
+    //             ...updatedEducation[index],
+    //             [field]: value,
+    //         };
+    //         return {...prev, educationDetail: updatedEducation};
+    //     });
+    // };
+
+    const handleNext = () => {
+        if (currentStep < 5) {
+            setCurrentStep((prevStep) => prevStep + 1);
+        }
+    };
+
+    // Navigation handlers
+    const handlePrevious = () => {
+        if (currentStep > 0) {
+            setCurrentStep((prevStep) => prevStep - 1);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -131,11 +173,13 @@ function ResumeForm() {
         const user = projectAuth.currentUser;
 
         if (!user || !templateId || !resumeId) {
-            alert('User not logged in or no template selected.');
+            setSaveStatus('error');
+            setError('User not logged in or no template selected.');
             return;
         }
 
         setIsUploading(true);
+        setSaveStatus('saving');
 
         try {
             // Create a reference to the specific resume document
@@ -154,407 +198,143 @@ function ResumeForm() {
             // Set the document with the unique resumeId
             await setDoc(docRef, resumeDataWithMetadata);
 
-            alert('Resume saved successfully!');
-            return resumeId;
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus(''), 3000); // Clear status after 3 seconds
         } catch (error) {
             console.error('Error saving resume:', error);
-            alert('Failed to save resume.');
-            return null;
+            setSaveStatus('error');
+            setError('Failed to save resume.');
         } finally {
             setIsUploading(false);
         }
     };
 
-    return (
-        <div className='flex space-x-10 p-6 font-sans'>
-            <form onSubmit={handleSubmit} className='w-1/2 space-y-6'>
-                <h2 className='text-lg font-semibold'>Resume Builder</h2>
+    // Render save status message
+    const renderSaveStatus = () => {
+        switch (saveStatus) {
+            case 'saving':
+                return <span className='ml-2 text-gray-600'>Saving...</span>;
+            case 'success':
+                return (
+                    <span className='ml-2 text-green-600'>
+                        Resume saved successfully!
+                    </span>
+                );
+            case 'error':
+                return <span className='ml-2 text-red-600'>{error}</span>;
+            default:
+                return null;
+        }
+    };
 
-                <div className='space-y-2'>
-                    <label className='block text-sm font-medium text-gray-900'>
-                        Profile Photo:{' '}
-                    </label>
-                    <ProfilePhotoUpload setProfilePhoto={setProfilePhoto} />
-                    {resumeData.profilePhoto && (
-                        <div>
-                            <h4>Profile Photo:</h4>
-                            <img
-                                src={resumeData.profilePhoto}
-                                alt='Profile'
-                                className='rounded-full w-32 h-32 object-cover'
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* Personal Details Section */}
-                <div id='personal' className='border-b border-gray-300 pb-6'>
-                    <h3 className='text-base font-semibold text-gray-900'>
-                        Personal Information
-                    </h3>
-                    <p className='text-sm text-gray-600'>
-                        Use a permanent address where you can receive mail.
-                    </p>
-                    <div className='space-y-4'>
-                        <div>
-                            <label className='block text-sm font-medium text-gray-900'>
-                                Name:
-                            </label>
-                            <input
-                                type='text'
-                                placeholder='Name'
-                                value={resumeData?.personalDetail?.name || ''} // Ensure fallback
-                                onChange={(e) =>
-                                    handleInputChange(
-                                        'personalDetail',
-                                        'name',
-                                        e.target.value,
-                                    )
-                                }
-                                className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                            />
-                        </div>
-
-                        <div>
-                            <label className='block text-sm font-medium text-gray-900'>
-                                Email:
-                            </label>
-                            <input
-                                type='email'
-                                placeholder='Email'
-                                value={resumeData?.personalDetail?.email || ''} // Ensure fallback
-                                onChange={(e) =>
-                                    handleInputChange(
-                                        'personalDetail',
-                                        'email',
-                                        e.target.value,
-                                    )
-                                }
-                                className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                            />
-                        </div>
-
-                        <div>
-                            <label className='block text-sm font-medium text-gray-900'>
-                                Phone:
-                            </label>
-                            <input
-                                type='tel'
-                                placeholder='Phone'
-                                value={resumeData?.personalDetail?.phone || ''} // Ensure fallback
-                                onChange={(e) =>
-                                    handleInputChange(
-                                        'personalDetail',
-                                        'phone',
-                                        e.target.value,
-                                    )
-                                }
-                                className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                            />
-                        </div>
-
-                        <div>
-                            <label className='block text-sm font-medium text-gray-900'>
-                                Address:
-                            </label>
-                            <input
-                                type='text'
-                                placeholder='Address'
-                                value={
-                                    resumeData?.personalDetail?.address || ''
-                                } // Ensure fallback
-                                onChange={(e) =>
-                                    handleInputChange(
-                                        'personalDetail',
-                                        'address',
-                                        e.target.value,
-                                    )
-                                }
-                                className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                            />
-                        </div>
+    const renderStepContent = () => {
+        switch (currentStep) {
+            case 0:
+                return (
+                    <div className='space-y-2'>
+                        <label className='block text-sm font-medium text-gray-900'>
+                            Profile Photo:{' '}
+                        </label>
+                        <ProfilePhotoUpload setProfilePhoto={setProfilePhoto} />
+                        {resumeData.profilePhoto && (
+                            <div>
+                                <h4>Profile Photo:</h4>
+                                <img
+                                    src={resumeData.profilePhoto}
+                                    alt='Profile'
+                                    className='rounded-full w-32 h-32 object-cover'
+                                />
+                            </div>
+                        )}
                     </div>
-                </div>
-
-                {/* Summary Section */}
-                <div id='summary' className='border-b border-gray-300 pb-6'>
-                    <h3 className='text-sm font-medium text-gray-900'>
-                        Summary
-                    </h3>
-                    <textarea
-                        placeholder="Use '-' or '*' for bullet points, or '1.', '2.' for numbered list."
-                        value={resumeData?.summary || ''} // Safe access with fallback
-                        onChange={(e) =>
-                            setResumeData((prev) => ({
-                                ...prev,
-                                summary: e.target.value,
-                            }))
-                        }
-                        className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
+                );
+            case 1:
+                return (
+                    <PersonalDetails
+                        personalDetail={resumeData.personalDetail}
+                        handleInputChange={handleInputChange}
                     />
-                </div>
+                );
+            case 2:
+                return (
+                    <Summary
+                        summary={resumeData.summary}
+                        setResumeData={setResumeData}
+                    />
+                );
+            case 3:
+                return (
+                    <Experience
+                        experience={resumeData.experience}
+                        handleArrayChange={handleArrayChange}
+                        addEntry={addEntry}
+                        removeEntry={removeEntry}
+                    />
+                );
+            case 4:
+                return (
+                    <Education
+                        educationDetail={resumeData.educationDetail}
+                        handleArrayChange={handleArrayChange}
+                        addEntry={addEntry}
+                        removeEntry={removeEntry}
+                    />
+                );
+            case 5:
+                return (
+                    <Skills
+                        skills={resumeData.skills}
+                        setResumeData={setResumeData}
+                    />
+                );
+            default:
+                return null;
+        }
+    };
 
-                {/* Experience Section */}
-                <div id='experience' className='border-b border-gray-300 pb-6'>
-                    <h3 className='text-base font-semibold text-gray-900'>
-                        Experience
-                    </h3>
-                    {resumeData?.experience?.length > 0 ? (
-                        resumeData.experience.map((exp, index) => (
-                            <div key={index} className='space-y-4'>
-                                <div>
-                                    <label className='block text-sm font-medium text-gray-900'>
-                                        Company:
-                                    </label>
-                                    <input
-                                        type='text'
-                                        placeholder='Company'
-                                        value={exp.company || ''} // Fallback to avoid undefined values
-                                        onChange={(e) =>
-                                            handleArrayChange(
-                                                'experience',
-                                                index,
-                                                'company',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                    />
-                                </div>
+    return (
+        <div className='bg-white shadow-md rounded-md p-6 font-sans'>
+            <h1 className='text-xl font-bold mb-4'>Resume Builder</h1>
 
-                                <div>
-                                    <label className='block text-sm font-medium text-gray-900'>
-                                        Position:
-                                    </label>
-                                    <input
-                                        type='text'
-                                        placeholder='Position'
-                                        value={exp.position || ''}
-                                        onChange={(e) =>
-                                            handleArrayChange(
-                                                'experience',
-                                                index,
-                                                'position',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                    />
-                                </div>
+            {renderStepContent()}
 
-                                <div>
-                                    <label className='block text-sm font-medium text-gray-900'>
-                                        Start Date:
-                                    </label>
-                                    <input
-                                        type='date'
-                                        placeholder='Start Date'
-                                        value={exp.startDate || ''}
-                                        onChange={(e) =>
-                                            handleArrayChange(
-                                                'experience',
-                                                index,
-                                                'startDate',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className='block text-sm font-medium text-gray-900'>
-                                        End Date:
-                                    </label>
-                                    <input
-                                        type='date'
-                                        placeholder='End Date'
-                                        value={
-                                            exp.endDate === 'Present'
-                                                ? ''
-                                                : exp.endDate || ''
-                                        }
-                                        onChange={(e) =>
-                                            handleArrayChange(
-                                                'experience',
-                                                index,
-                                                'endDate',
-                                                e.target.value,
-                                            )
-                                        }
-                                        disabled={exp.endDate === 'Present'}
-                                        className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                    />
-                                    <div className='block text-sm font-medium text-gray-900'>
-                                        <input
-                                            type='checkbox'
-                                            onClick={() =>
-                                                handleArrayChange(
-                                                    'experience',
-                                                    index,
-                                                    'endDate',
-                                                    'Present',
-                                                )
-                                            }
-                                            checked={exp.endDate === 'Present'}
-                                        />
-                                        Present
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className='block text-sm font-medium text-gray-900'>
-                                        Description:
-                                    </label>
-                                    <textarea
-                                        placeholder='Description'
-                                        value={exp.description || ''}
-                                        onChange={(e) =>
-                                            handleArrayChange(
-                                                'experience',
-                                                index,
-                                                'description',
-                                                e.target.value,
-                                            )
-                                        }
-                                        className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                    />
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className='text-sm text-gray-600'>
-                            No experience added yet.
-                        </p>
-                    )}
+            <div className='flex justify-between mt-6'>
+                {currentStep > 0 && (
                     <button
                         type='button'
-                        onClick={() => addEntry('experience')}
-                        className='px-4 py-2 bg-indigo-600 text-white rounded-md mt-4'
+                        onClick={handlePrevious}
+                        className='py-2 px-4 bg-gray-500 text-white rounded-md'
                     >
-                        Add Experience
+                        Previous
                     </button>
-                </div>
+                )}
 
-                {/* Education Section */}
-                <div id='education' className='border-b border-gray-300 pb-6'>
-                    <h3 className='text-base font-semibold text-gray-900'>
-                        Education
-                    </h3>
-                    {resumeData?.educationDetail?.map((edu, index) => (
-                        <div key={index} className='space-y-4'>
-                            <div>
-                                <label className='block text-sm font-medium text-gray-900'>
-                                    Institution:
-                                </label>
-                                <input
-                                    type='text'
-                                    placeholder='Institution Name'
-                                    value={edu?.institution || ''} // Ensure fallback value
-                                    onChange={(e) =>
-                                        handleEducationChange(
-                                            index,
-                                            'institution',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                />
-                            </div>
-
-                            <div>
-                                <label className='block text-sm font-medium text-gray-900'>
-                                    Course:
-                                </label>
-                                <input
-                                    type='text'
-                                    placeholder='Course'
-                                    value={edu?.course || ''} // Ensure fallback value
-                                    onChange={(e) =>
-                                        handleEducationChange(
-                                            index,
-                                            'course',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                />
-                            </div>
-
-                            <div>
-                                <label className='block text-sm font-medium text-gray-900'>
-                                    Start Date:
-                                </label>
-                                <input
-                                    type='date'
-                                    value={edu?.startDate || ''} // Ensure fallback value
-                                    onChange={(e) =>
-                                        handleEducationChange(
-                                            index,
-                                            'startDate',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                />
-                            </div>
-
-                            <div>
-                                <label className='block text-sm font-medium text-gray-900'>
-                                    End Date:
-                                </label>
-                                <input
-                                    type='date'
-                                    value={edu?.endDate || ''} // Ensure fallback value
-                                    onChange={(e) =>
-                                        handleEducationChange(
-                                            index,
-                                            'endDate',
-                                            e.target.value,
-                                        )
-                                    }
-                                    className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                                />
-                            </div>
-                        </div>
-                    ))}
+                {currentStep < 5 ? (
                     <button
                         type='button'
-                        onClick={() => addEntry('educationDetail')} // Use the addEntry function
-                        className='px-4 py-2 bg-indigo-600 text-white rounded-md mt-4'
+                        onClick={handleNext}
+                        className='py-2 px-4 bg-blue-600 text-white rounded-md'
                     >
-                        Add Education
+                        Next
                     </button>
-                </div>
-
-                {/* Skills Section */}
-                <div id='skills' className='pb-6'>
-                    <h3 className='text-base font-semibold text-gray-900'>
-                        Skills
-                    </h3>
-                    <input
-                        type='text'
-                        placeholder='Enter skills (separated by commas)'
-                        value={resumeData?.skills?.join(', ') || ''} // Convert array to string, fallback if undefined
-                        onChange={handleSkillsChange} // Use the provided handler to update skills
-                        className='block w-full px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-indigo-600'
-                    />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                    type='submit'
-                    className={`px-4 py-2 rounded-md ${
-                        isUploading ? 'bg-gray-400' : 'bg-indigo-600 text-white'
-                    }`}
-                    disabled={isUploading}
-                >
-                    {isUploading ? 'Uploading...' : 'Save Resume'}
-                </button>
-            </form>
-            {/* Main Form Section */}
-            <div className='flex-1 bg-white pl-28'>
-                <InpTemp resumeData={resumeData} />
+                ) : (
+                    <div className='flex items-center space-x-2'>
+                        <form onSubmit={handleSubmit} className='space-y-6'>
+                            <button
+                                type='submit'
+                                className={`px-4 py-2 rounded-md ${
+                                    isUploading
+                                        ? 'bg-gray-400'
+                                        : 'bg-indigo-600 text-white'
+                                }`}
+                                disabled={isUploading}
+                            >
+                                {isUploading ? 'Uploading...' : 'Save Resume'}
+                            </button>
+                        </form>
+                        {renderSaveStatus()}
+                    </div>
+                )}
             </div>
         </div>
     );

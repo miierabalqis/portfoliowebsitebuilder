@@ -13,24 +13,38 @@ const Sidebar = () => {
     return (
         <div className='relative'>
             {/* Fixed Sidebar */}
-            <div className='fixed top-16 left-0 w-25 h-full bg-blue-400 px-4 py-8 z-50 overflow-y-auto'>
+            <div className='fixed top-16 left-0 w-32 h-full bg-stone-700 px-4 py-8 z-50 overflow-y-auto'>
                 <nav className='flex flex-col'>
                     <Link
                         to='personal'
                         smooth={true}
                         duration={500}
                         offset={-100}
-                        className='block px-2 py-2 mt-2 text-xs text-gray-900 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none font-sans'
+                        className='flex items-center px-2 py-2 mt-2 text-xs text-amber-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none'
                         aria-label='Scroll to Personal Section'
                     >
+                        <svg
+                            className='h-4 w-4 text-amber-500 mr-2' // Add margin-right to space out the icon from the text
+                            fill='none'
+                            viewBox='0 0 24 24'
+                            stroke='currentColor'
+                        >
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth='2'
+                                d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
+                            />
+                        </svg>
                         Personal
                     </Link>
+
                     <Link
                         to='summary'
                         smooth={true}
                         duration={500}
                         offset={-100}
-                        className='block px-2 py-2 mt-2 text-xs text-gray-900 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none font-sans'
+                        className='block px-2 py-2 mt-2 text-xs text-amber-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none'
                         aria-label='Scroll to Summary Section'
                     >
                         Summary
@@ -40,7 +54,7 @@ const Sidebar = () => {
                         smooth={true}
                         duration={500}
                         offset={-100}
-                        className='block px-2 py-2 mt-2 text-xs text-gray-900 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none font-sans'
+                        className='block px-2 py-2 mt-2 text-xs text-amber-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none '
                         aria-label='Scroll to Experience Section'
                     >
                         Experience
@@ -50,7 +64,7 @@ const Sidebar = () => {
                         smooth={true}
                         duration={500}
                         offset={-100}
-                        className='block px-2 py-2 mt-2 text-xs text-gray-900 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none font-sans'
+                        className='block px-2 py-2 mt-2 text-xs text-amber-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none'
                         aria-label='Scroll to Education Section'
                     >
                         Education
@@ -60,7 +74,7 @@ const Sidebar = () => {
                         smooth={true}
                         duration={500}
                         offset={-100}
-                        className='block px-2 py-2 mt-2 text-xs text-gray-900 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none font-sans'
+                        className='block px-2 py-2 mt-2 text-xs text-amber-400 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none '
                         aria-label='Scroll to Skills Section'
                     >
                         Skills
@@ -68,7 +82,7 @@ const Sidebar = () => {
                     <div className='relative'>
                         <button
                             onClick={() => setDropdownOpen(!dropdownOpen)}
-                            className='flex items-center w-full px-2 py-2 mt-2 text-xs text-left rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none font-sans'
+                            className='flex items-center w-full px-2 py-2 mt-2 text-xs text-amber-400 text-left rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none '
                         >
                             Templates
                             <svg
@@ -89,17 +103,17 @@ const Sidebar = () => {
                             <div className='absolute w-full mt-2 rounded shadow-lg bg-white dark:bg-gray-800'>
                                 <RouterLink
                                     to='/templates/tempamit' // Use the route path for TempAmit component
-                                    className='block px-2 py-2 text-xs text-gray-900 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    className='block px-2 py-2 text-xs text-amber-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 >
                                     TempAmit
                                 </RouterLink>
                                 <button
-                                    className='block px-2 py-2 text-xs text-gray-900 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    className='block px-2 py-2 text-xs text-amber-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                                     onClick={handleTemplateClick}
                                 >
                                     TempJohn
                                 </button>
-                                <button className='block px-2 py-2 text-xs text-gray-900 hover:bg-gray-200 dark:hover:bg-gray-600'>
+                                <button className='block px-2 py-2 text-xs text-amber-400 hover:bg-gray-200 dark:hover:bg-gray-600'>
                                     Link #3
                                 </button>
                             </div>

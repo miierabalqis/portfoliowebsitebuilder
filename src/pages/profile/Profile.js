@@ -41,7 +41,7 @@ export default function Profile() {
     }
 
     return (
-        <div className='min-h-screen bg-gray-100 flex items-center justify-center'>
+        <div className='min-h-screen bg-amber-50 flex items-center justify-center'>
             <div className='bg-white p-8 rounded-lg shadow-md max-w-md w-full'>
                 <h2 className='text-2xl font-bold text-gray-900'>Profile</h2>
                 <div className='mt-6'>
