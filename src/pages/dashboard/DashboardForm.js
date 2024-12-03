@@ -3,13 +3,18 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {doc, getDoc} from 'firebase/firestore';
 import {projectFirestore} from '../../firebase/config';
 import {getAuth, onAuthStateChanged} from 'firebase/auth';
-import Sidebar from '../form/Sidebar';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {
+    faSpinner,
+    faArrowLeft,
+    faExclamationTriangle,
+} from '@fortawesome/free-solid-svg-icons';
 import InpTemp from '../resume/template/template_1/InpTemp';
 import DashboardResumeForm from './DashboardResumeForm';
+import Download from '../resume/edit/download/Download';
 
 const DashboardForm = () => {
     const navigate = useNavigate();
-    const sidebarRef = useRef(null);
     const {templateId, resumeId} = useParams();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -31,7 +36,6 @@ const DashboardForm = () => {
             }
 
             try {
-                // Fetch the specific resume document
                 const resumeDocRef = doc(projectFirestore, 'resumes', resumeId);
                 const resumeDoc = await getDoc(resumeDocRef);
 
@@ -41,7 +45,6 @@ const DashboardForm = () => {
                     return;
                 }
 
-                // Validate that the resume belongs to the current user
                 const resumeData = resumeDoc.data();
                 if (resumeData.userId !== user.uid) {
                     setError('Unauthorized access');
@@ -49,7 +52,10 @@ const DashboardForm = () => {
                     return;
                 }
 
-                setResumeData(resumeData);
+                setResumeData({
+                    ...resumeData,
+                    id: resumeId, // Make sure to include the document ID
+                });
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching resume:', error);
@@ -63,42 +69,71 @@ const DashboardForm = () => {
 
     if (loading) {
         return (
-            <div className='flex justify-center items-center min-h-screen'>
-                <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600'></div>
+            <div className='min-h-screen bg-[#FBFBFB] flex items-center justify-center'>
+                <div className='text-center space-y-3'>
+                    <FontAwesomeIcon
+                        icon={faSpinner}
+                        className='animate-spin text-4xl text-[#CDC1FF]'
+                    />
+                    <p className='text-gray-600'>Loading your resume...</p>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className='text-red-600 p-4'>
-                Error: {error}
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className='ml-4 bg-blue-500 text-white px-4 py-2 rounded'
-                >
-                    Return to Dashboard
-                </button>
+            <div className='min-h-screen bg-[#FBFBFB] flex items-center justify-center p-4'>
+                <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-8 max-w-md w-full text-center space-y-4'>
+                    <FontAwesomeIcon
+                        icon={faExclamationTriangle}
+                        className='text-4xl text-red-500'
+                    />
+                    <h3 className='text-xl font-bold text-gray-800'>{error}</h3>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className='group bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center mx-auto'
+                    >
+                        <FontAwesomeIcon
+                            icon={faArrowLeft}
+                            className='mr-2 transform group-hover:-translate-x-1 transition-transform duration-300'
+                        />
+                        Return to Dashboard
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className='flex min-h-screen bg-gray-50 dark:bg-gray-900'>
-            <div ref={sidebarRef} className='min-h-screen'>
-                <Sidebar />
+        <div className='flex min-h-screen bg-[#FBFBFB]'>
+            {/* Main Content Section */}
+            <div className='flex-1 px-8'>
+                {/* Form Section with gradient background */}
+                <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                    <DashboardResumeForm
+                        initialResumeData={resumeData}
+                        onUpdate={setResumeData}
+                    />
+                </div>
             </div>
 
-            <div className='flex-1 bg-white pl-32 pt-15'>
-                <DashboardResumeForm
-                    resumeData={resumeData}
-                    onUpdate={setResumeData}
-                />
+            {/* Preview Section */}
+            <div className='flex-1 bg-gray-50 p-6 border-l border-[#CDC1FF]/10'>
+                <div className='sticky top-6'>
+                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                        <h2 className='text-2xl font-bold text-gray-800 mb-6'>
+                            Preview
+                        </h2>
+                        <InpTemp data={resumeData} />
+                    </div>
+                </div>
             </div>
 
-            <div className='flex-1 bg-amber-50 pl-26 w-full md:w-1/2 bg-amber-50 p-4'>
-                <InpTemp data={resumeData} />
-            </div>
+            <Download
+                resume={resumeData}
+                resumeTemplateComponent={InpTemp} // Your resume template component
+            />
         </div>
     );
 };

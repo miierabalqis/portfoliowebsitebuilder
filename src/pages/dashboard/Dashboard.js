@@ -1,15 +1,19 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import cv from '../../assets/images/add.png';
-import resumeic from '../../assets/images/dashboard/resumeic.png';
-import editname from '../../assets/images/dashboard/editname.png';
-import view from '../../assets/images/dashboard/view.png';
-import del from '../../assets/images/dashboard/delete.png';
+import {getAuth, onAuthStateChanged} from 'firebase/auth';
 import {
     fetchUserResumesWithTemplates,
     saveResumeEditName,
 } from '../../firebase/helpers';
-import {getAuth, onAuthStateChanged} from 'firebase/auth';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {
+    faPlus,
+    faFile,
+    faEdit,
+    faEye,
+    faTrash,
+    faArrowRight,
+} from '@fortawesome/free-solid-svg-icons';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -66,210 +70,182 @@ export default function Dashboard() {
         }
     };
 
-    const handleEditResume = (resumeId) => {
-        navigate(`/form/${resumeId}`);
-    };
-
     const handleEditClick = (templateId, resumeId) => {
         navigate(`/dashboardform/${templateId}/${resumeId}`);
     };
 
     return (
-        <div className='min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900'>
-            <div className='container mx-auto py-8 space-y-10 pt-24'>
-                <h2 className='text-center text-4xl font-bold text-white mb-4 hover:text-pink-500 transition-colors duration-300'>
-                    My Dashboard
-                </h2>
+        <div className='min-h-screen bg-[#FBFBFB]'>
+            <div className='container mx-auto px-4 py-16'>
+                {/* Header Section */}
+                <section className='text-center mb-16'>
+                    <div className='relative'>
+                        <div className='absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-[#CDC1FF] via-[#BFECFF] to-[#FFCCEA]'></div>
+                        <h2 className='relative text-4xl md:text-5xl font-bold text-black mb-4 pt-12 hover:scale-105 transition-transform duration-300'>
+                            My{' '}
+                            <span className='bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] bg-clip-text text-transparent hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300'>
+                                Dashboard
+                            </span>
+                        </h2>
+                    </div>
+                    <p className='text-gray-600 mb-8 text-lg max-w-2xl mx-auto'>
+                        Manage and customize your professional resumes
+                    </p>
+                </section>
 
                 {/* Tab Navigation */}
-                <div className='mb-8 flex justify-center'>
-                    <div className='flex'>
-                        <button className='relative group text-lg font-semibold px-4 py-2 text-white flex items-center hover:text-pink-500 transition-colors duration-300'>
-                            <img
-                                className='w-5 h-5 mb-8 translate-y-[12px] mr-3 filter invert'
-                                src={resumeic}
-                                alt='resume tab'
-                            />
-                            Resumes
-                            <span className='absolute bottom-0 left-0 w-full h-1 bg-transparent group-hover:bg-purple-600 transform scale-x-0 transition-all duration-300 ease-in-out group-hover:scale-x-100'></span>
-                            <span className='absolute bottom-[-4px] left-0 w-[300%] h-[0.5px] bg-purple-800'></span>
-                        </button>
-                    </div>
+                <div className='flex justify-center mb-12'>
+                    <button className='relative group text-lg font-semibold px-6 py-3 text-gray-800 flex items-center hover:text-[#CDC1FF] transition-colors duration-300'>
+                        <FontAwesomeIcon icon={faFile} className='mr-2' />
+                        Resumes
+                        <span className='absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] transform scale-x-0 transition-all duration-300 group-hover:scale-x-100'></span>
+                    </button>
                 </div>
 
                 {/* Dashboard Content */}
-                <div className='p-3 flex flex-wrap gap-8 justify-center'>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
                     {/* Create Resume Card */}
                     <div
-                        className='max-w-sm w-[325px] px-2 py-[120px] bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 border-4 border-dotted border-purple-500 rounded-lg shadow-lg hover:cursor-pointer hover:border-pink-500 transition-all duration-300'
                         onClick={() => navigate('/home')}
+                        className='group bg-white p-8 rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 hover:-translate-y-2 border border-[#CDC1FF]/10 cursor-pointer flex flex-col items-center justify-center min-h-[400px]'
                     >
-                        <div className='flex flex-col justify-center py-12 items-center'>
-                            <div className='flex justify-center items-center'>
-                                <img
-                                    className='w-10 h-10 mb-8 filter invert hover:scale-110 transition-transform duration-300'
-                                    src={cv}
-                                    alt='cv'
-                                />
-                            </div>
-                            <div className='flex flex-col justify-center'>
-                                <p className='text-center text-white text-lg font-semibold hover:text-pink-500 transition-colors duration-300'>
-                                    Create Resume
-                                </p>
-                            </div>
+                        <div className='w-16 h-16 mb-6 rounded-full bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] flex items-center justify-center group-hover:scale-110 transition-transform duration-300'>
+                            <FontAwesomeIcon
+                                icon={faPlus}
+                                className='text-white text-2xl'
+                            />
                         </div>
+                        <h3 className='text-2xl font-bold text-gray-800 mb-2 group-hover:text-[#CDC1FF] transition-colors duration-300'>
+                            Create Resume
+                        </h3>
+                        <p className='text-gray-600 text-center'>
+                            Start building your professional resume
+                        </p>
                     </div>
 
                     {/* Loading and Error States */}
                     {loading && (
-                        <div className='text-center w-full text-white'>
-                            <p>Loading resumes...</p>
+                        <div className='col-span-full text-center py-12'>
+                            <div className='animate-pulse text-[#CDC1FF]'>
+                                Loading resumes...
+                            </div>
                         </div>
                     )}
 
                     {error && (
-                        <div className='text-center w-full text-pink-500'>
-                            <p>{error}</p>
+                        <div className='col-span-full text-center py-12'>
+                            <div className='text-red-500'>{error}</div>
                         </div>
                     )}
 
-                    {/* No Resumes State */}
-                    {!loading && !error && resumes.length === 0 && (
-                        <div className='text-center w-full text-white'>
-                            <p>No resumes found. Create your first resume!</p>
-                        </div>
-                    )}
-
-                    {/* Resumes Rendering */}
+                    {/* Resumes */}
                     {!loading &&
                         !error &&
                         resumes.map((resume) => (
                             <div
                                 key={resume.id}
-                                className='max-w-sm w-[325px] bg-white border-4 border-purple-500 rounded-lg shadow-lg hover:shadow-purple-500/20 transition-all duration-300 hover:-translate-y-2'
+                                className='group bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 hover:-translate-y-2 border border-[#CDC1FF]/10 overflow-hidden'
                             >
-                                <div className='flex flex-col justify-center items-center'>
-                                    <div className='flex justify-center items-center w-full group relative'>
-                                        <img
-                                            src={resume.imageUrl}
-                                            alt='Resume'
-                                            className='h-[280px] w-full object-cover object-top rounded-t-lg group-hover:filter group-hover:brightness-50 transition-all duration-300 ease-in-out'
+                                {/* Resume Preview Image */}
+                                <div className='relative overflow-hidden'>
+                                    <img
+                                        src={resume.imageUrl}
+                                        alt='Resume Preview'
+                                        className='w-full h-48 object-cover object-top transition-transform duration-500 group-hover:scale-105'
+                                    />
+                                    <div className='absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-0 group-hover:opacity-50 transition-opacity duration-300'></div>
+                                    <button
+                                        onClick={() =>
+                                            handleEditClick(
+                                                resume.templateId,
+                                                resume.id,
+                                            )
+                                        }
+                                        className='absolute bottom-4 left-1/2 transform -translate-x-1/2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-2 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA]'
+                                    >
+                                        Edit Resume
+                                    </button>
+                                </div>
+
+                                {/* Resume Details */}
+                                <div className='p-6'>
+                                    <h4 className='text-xl font-semibold text-gray-800 mb-2 group-hover:text-[#CDC1FF] transition-colors duration-300'>
+                                        {resume.templateName ||
+                                            'Untitled Resume'}
+                                    </h4>
+                                    <p className='text-gray-600 text-sm mb-4'>
+                                        Created on:{' '}
+                                        {new Date(
+                                            resume.createdAt.seconds * 1000,
+                                        ).toLocaleDateString()}
+                                    </p>
+
+                                    {/* Name Edit Section */}
+                                    <div className='flex items-center gap-2 mb-6'>
+                                        <input
+                                            className='flex-1 bg-gray-50 border border-[#CDC1FF]/20 p-2 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#CDC1FF]/50'
+                                            value={resume.editName || ''}
+                                            onChange={(e) => {
+                                                const updatedResumes =
+                                                    resumes.map((r) =>
+                                                        r.id === resume.id
+                                                            ? {
+                                                                  ...r,
+                                                                  editName:
+                                                                      e.target
+                                                                          .value,
+                                                              }
+                                                            : r,
+                                                    );
+                                                setResumes(updatedResumes);
+                                            }}
+                                            placeholder='Enter resume name'
                                         />
-                                        <div className='hidden group-hover:block absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'>
-                                            <button
-                                                onClick={() =>
-                                                    handleEditClick(
-                                                        resume.templateId,
-                                                        resume.id,
-                                                    )
-                                                }
-                                                className='bg-purple-600 text-white px-6 py-2 rounded-full hover:bg-purple-500 transition-colors duration-300'
-                                            >
-                                                Edit Resume
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={() =>
+                                                handleSaveName(
+                                                    resume.id,
+                                                    resume.editName,
+                                                )
+                                            }
+                                            className='p-2 text-[#CDC1FF] hover:text-[#BFECFF] transition-colors duration-300'
+                                        >
+                                            <FontAwesomeIcon icon={faEdit} />
+                                        </button>
                                     </div>
 
-                                    <div className='p-6 w-full bg-white rounded-b-lg'>
-                                        <h1 className='text-lg font-semibold mb-3 text-center text-gray-800 hover:text-purple-600 transition-colors duration-300'>
-                                            {resume.templateName ||
-                                                'Untitled Resume'}
-                                        </h1>
-                                        <p className='text-base leading-relaxed mb-5 text-center text-gray-600'>
-                                            Created on:{' '}
-                                            {new Date(
-                                                resume.createdAt.seconds * 1000,
-                                            ).toLocaleDateString()}
-                                        </p>
-
-                                        {/* Editable Input Field */}
-                                        <div className='text-center mb-8 flex items-center justify-center space-x-2'>
-                                            <input
-                                                className='bg-gray-50 border border-purple-500 p-2 rounded-md w-4/5 text-center text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500'
-                                                value={resume.editName || ''}
-                                                onChange={(e) => {
-                                                    const updatedResumes =
-                                                        resumes.map((r) =>
-                                                            r.id === resume.id
-                                                                ? {
-                                                                      ...r,
-                                                                      editName:
-                                                                          e
-                                                                              .target
-                                                                              .value,
-                                                                  }
-                                                                : r,
-                                                        );
-                                                    setResumes(updatedResumes);
-                                                }}
-                                                placeholder='Enter new name'
+                                    {/* Action Buttons */}
+                                    <div className='flex justify-center gap-6'>
+                                        <button
+                                            onClick={() =>
+                                                navigate(
+                                                    `/preview/${resume.id}`,
+                                                )
+                                            }
+                                            className='group flex items-center text-black hover:text-[#CDC1FF] transition-colors duration-300'
+                                        >
+                                            <FontAwesomeIcon
+                                                icon={faEye}
+                                                className='mr-2'
                                             />
-
-                                            <div className='group relative'>
-                                                <button
-                                                    onClick={() =>
-                                                        handleSaveName(
-                                                            resume.id,
-                                                            resume.editName,
-                                                        )
-                                                    }
-                                                    className='text-purple-600 hover:text-purple-500 transition-colors duration-300'
-                                                >
-                                                    <img
-                                                        src={editname}
-                                                        alt='Edit Name'
-                                                        className='w-5 h-5 hover:opacity-80 transition-opacity duration-300'
-                                                    />
-                                                </button>
-                                                <div className='hidden group-hover:block absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm py-1 px-2 rounded'>
-                                                    Save Name
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className='flex items-center justify-center space-x-8'>
-                                            {/* Preview button */}
-                                            <div className='group relative'>
-                                                <button
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/preview/${resume.id}`,
-                                                        )
-                                                    }
-                                                    className='text-purple-600 hover:text-purple-500 transition-colors duration-300'
-                                                >
-                                                    <img
-                                                        src={view}
-                                                        alt='View'
-                                                        className='w-5 h-5 hover:opacity-80 transition-opacity duration-300'
-                                                    />
-                                                </button>
-                                                <div className='hidden group-hover:block absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm py-1 px-2 rounded'>
-                                                    Preview
-                                                </div>
-                                            </div>
-
-                                            {/* Delete button */}
-                                            <div className='group relative'>
-                                                <button
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/delete/${resume.id}`,
-                                                        )
-                                                    }
-                                                    className='text-purple-600 hover:text-purple-500 transition-colors duration-300'
-                                                >
-                                                    <img
-                                                        src={del}
-                                                        alt='Delete'
-                                                        className='w-5 h-5 hover:opacity-80 transition-opacity duration-300'
-                                                    />
-                                                </button>
-                                                <div className='hidden group-hover:block absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm py-1 px-2 rounded'>
-                                                    Delete
-                                                </div>
-                                            </div>
-                                        </div>
+                                            Preview
+                                            <FontAwesomeIcon
+                                                icon={faArrowRight}
+                                                className='ml-1 opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300'
+                                            />
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                navigate(`/delete/${resume.id}`)
+                                            }
+                                            className='flex items-center text-black hover:text-red-500 transition-colors duration-300'
+                                        >
+                                            <FontAwesomeIcon
+                                                icon={faTrash}
+                                                className='mr-2'
+                                            />
+                                            Delete
+                                        </button>
                                     </div>
                                 </div>
                             </div>

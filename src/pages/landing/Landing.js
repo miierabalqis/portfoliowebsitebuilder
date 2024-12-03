@@ -9,7 +9,7 @@ import {
 
 const App = () => {
     return (
-        <div className='min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900'>
+        <div className='min-h-screen bg-[#FBFBFB]'>
             <Main />
             <Footer />
         </div>
@@ -26,19 +26,22 @@ const Main = () => (
 
 const Hero = () => (
     <section className='text-center'>
-        <h2 className='text-4xl md:text-5xl font-bold text-white mb-4 pt-12 hover:scale-105 transition-transform duration-300'>
-            Create Your Professional{' '}
-            <span className='text-pink-500 hover:text-pink-400 transition-colors duration-300'>
-                Portfolio
-            </span>
-        </h2>
-        <p className='text-gray-300 mb-8 text-lg max-w-2xl mx-auto'>
+        <div className='relative'>
+            <div className='absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-[#CDC1FF] via-[#BFECFF] to-[#FFCCEA]'></div>
+            <h2 className='relative text-4xl md:text-5xl font-bold text-black mb-4 pt-12 hover:scale-105 transition-transform duration-300'>
+                Create Your Professional{' '}
+                <span className='bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] bg-clip-text text-transparent hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300'>
+                    Portfolio
+                </span>
+            </h2>
+        </div>
+        <p className='text-gray-600 mb-8 text-lg max-w-2xl mx-auto'>
             Build a stunning portfolio website in minutes with our easy-to-use
             builder.
         </p>
         <a
             href='/home'
-            className='group bg-purple-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-purple-500 hover:scale-105 transform transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 inline-flex items-center'
+            className='group bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black px-8 py-4 rounded-full text-lg font-semibold hover:from-[#BFECFF] hover:to-[#FFCCEA] hover:scale-105 transform transition-all duration-300 hover:shadow-lg inline-flex items-center'
         >
             Get Started
             <FontAwesomeIcon
@@ -51,7 +54,7 @@ const Hero = () => (
 
 const Features = () => (
     <section className='mt-24'>
-        <h3 className='text-3xl font-bold text-white mb-8 text-center hover:text-pink-500 transition-colors duration-300'>
+        <h3 className='text-3xl font-bold text-black mb-8 text-center hover:text-[#CDC1FF] transition-colors duration-300'>
             Powerful Features
         </h3>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
@@ -59,31 +62,38 @@ const Features = () => (
                 icon={faPaintBrush}
                 title='Customizable Templates'
                 description='Choose and customize from a variety of stunning templates.'
+                color='#EB3678'
             />
             <Feature
                 icon={faMobileAlt}
                 title='Responsive Design'
                 description='Looks great on any device: phone, tablet, or desktop.'
+                color='#3DC2EC'
             />
             <Feature
                 icon={faCode}
                 title='Easy to Use'
                 description='No coding required; just drag and drop.'
+                color='#610C9F'
             />
         </div>
     </section>
 );
 
-const Feature = ({icon, title, description}) => (
-    <div className='group bg-white p-8 rounded-xl shadow-lg hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 hover:-translate-y-2'>
+const Feature = ({icon, title, description, color}) => (
+    <div className='group bg-white p-8 rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 hover:-translate-y-2 border border-[#CDC1FF]/10'>
         <div className='flex justify-center'>
             <FontAwesomeIcon
                 icon={icon}
                 size='3x'
-                className='text-purple-600 mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300'
+                style={{color}}
+                className='mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300'
             />
         </div>
-        <h4 className='text-2xl font-bold text-gray-800 mb-4 text-center group-hover:text-purple-600 transition-colors duration-300'>
+        <h4
+            style={{color}}
+            className='text-2xl font-bold mb-4 text-center opacity-80 group-hover:opacity-100 transition-all duration-300'
+        >
             {title}
         </h4>
         <p className='text-gray-600 text-center group-hover:text-gray-700 transition-colors duration-300'>
@@ -94,7 +104,7 @@ const Feature = ({icon, title, description}) => (
 
 const ResumeTemplates = () => (
     <section className='mt-24'>
-        <h3 className='text-3xl font-bold text-white mb-8 text-center hover:text-pink-500 transition-colors duration-300'>
+        <h3 className='text-3xl font-bold text-black mb-8 text-center hover:text-[#CDC1FF] transition-colors duration-300'>
             Resume Templates
         </h3>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
@@ -116,21 +126,24 @@ const ResumeTemplates = () => (
 );
 
 const TemplateCard = ({title, description}) => (
-    <div className='group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-500 hover:-translate-y-2'>
+    <div className='group p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 relative bg-gradient-to-br from-[#CDC1FF]/30 via-[#BFECFF]/30 to-[#FFCCEA]/30 hover:from-[#CDC1FF]/40 hover:via-[#BFECFF]/40 hover:to-[#FFCCEA]/40'>
         <div className='overflow-hidden rounded-lg mb-6'>
-            <img
-                src='/api/placeholder/300/200'
-                alt={`${title} Example`}
-                className='w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-500'
-            />
+            <div className='relative'>
+                <div className='absolute inset-0 bg-gradient-to-br from-[#CDC1FF]/20 via-[#BFECFF]/20 to-[#FFCCEA]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500'></div>
+                <img
+                    src='/api/placeholder/300/200'
+                    alt={`${title} Example`}
+                    className='w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-500'
+                />
+            </div>
         </div>
-        <h4 className='text-2xl font-bold text-gray-800 mb-3 group-hover:text-purple-600 transition-colors duration-300'>
+        <h4 className='text-2xl font-bold text-black mb-3 group-hover:text-[#CDC1FF] transition-colors duration-300'>
             {title}
         </h4>
         <p className='text-gray-600 group-hover:text-gray-700 transition-colors duration-300'>
             {description}
         </p>
-        <button className='mt-4 text-purple-600 font-semibold hover:text-purple-500 transition-colors duration-300 inline-flex items-center'>
+        <button className='mt-4 text-[#CDC1FF] font-semibold hover:text-[#BFECFF] transition-colors duration-300 inline-flex items-center'>
             Preview Template
             <FontAwesomeIcon
                 icon={faArrowRight}
@@ -141,9 +154,9 @@ const TemplateCard = ({title, description}) => (
 );
 
 const Footer = () => (
-    <footer className='bg-gray-900 text-white py-8 mt-24 border-t border-gray-800'>
+    <footer className='bg-gradient-to-r from-[#CDC1FF]/10 via-[#BFECFF]/10 to-[#FFCCEA]/10 text-black py-8 mt-24 border-t border-[#CDC1FF]/20'>
         <div className='container mx-auto text-center'>
-            <p className='hover:text-purple-400 transition-colors duration-300'>
+            <p className='hover:text-[#CDC1FF] transition-colors duration-300'>
                 &copy; 2024 Portfolio Builder. All rights reserved.
             </p>
         </div>

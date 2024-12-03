@@ -1,12 +1,75 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback, memo} from 'react';
 import {doc, updateDoc} from 'firebase/firestore';
 import {useNavigate} from 'react-router-dom';
 import {fetchUserResumesWithTemplatesForm} from '../../firebase/helpers';
 import {getAuth, onAuthStateChanged} from 'firebase/auth';
 import ProfilePhotoUpload from '../../pages/resume/edit/PhotoUpload';
 import {projectFirestore} from '../../firebase/config';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {
+    faEdit,
+    faSave,
+    faArrowRight,
+    faArrowLeft,
+    faSpinner,
+    faTimes,
+    faPlus,
+    faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 
-const DashboardResumeForm = () => {
+const MemoizedInput = memo(
+    ({
+        type = 'text',
+        value,
+        onChange,
+        readOnly,
+        className = '',
+        field,
+        onBlur,
+    }) => (
+        <input
+            type={type}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
+            readOnly={readOnly}
+            className={`w-full px-4 py-2 rounded-lg border border-[#CDC1FF]/20 focus:ring-2 focus:ring-[#CDC1FF]/50 focus:border-transparent ${
+                readOnly ? 'bg-gray-50' : 'bg-white'
+            } transition-all duration-300 ${className}`}
+        />
+    ),
+    (prevProps, nextProps) => {
+        return (
+            prevProps.value === nextProps.value &&
+            prevProps.readOnly === nextProps.readOnly &&
+            prevProps.className === nextProps.className
+        );
+    },
+);
+
+// Optimized TextArea component with proper memoization
+const MemoizedTextArea = memo(
+    ({value, onChange, readOnly, rows = 5, onBlur}) => (
+        <textarea
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
+            readOnly={readOnly}
+            rows={rows}
+            className={`w-full px-4 py-2 rounded-lg border border-[#CDC1FF]/20 focus:ring-2 focus:ring-[#CDC1FF]/50 focus:border-transparent ${
+                readOnly ? 'bg-gray-50' : 'bg-white'
+            } transition-all duration-300`}
+        />
+    ),
+    (prevProps, nextProps) => {
+        return (
+            prevProps.value === nextProps.value &&
+            prevProps.readOnly === nextProps.readOnly
+        );
+    },
+);
+
+const DashboardResumeForm = ({initialResumeData}) => {
     const navigate = useNavigate();
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -21,6 +84,7 @@ const DashboardResumeForm = () => {
     const auth = getAuth();
     const user = auth.currentUser;
 
+    // Keep all existing useEffect hooks and helper functions exactly as they are
     useEffect(() => {
         const auth = getAuth();
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -31,6 +95,15 @@ const DashboardResumeForm = () => {
                         userId,
                     );
                     setResumes(data || []);
+
+                    if (initialResumeData) {
+                        const matchingResume = data.find(
+                            (resume) => resume.id === initialResumeData.id,
+                        );
+                        if (matchingResume) {
+                            handleResumeSelect(matchingResume);
+                        }
+                    }
                 } catch (err) {
                     console.error('Error fetching resumes:', err);
                     setError('Failed to fetch resumes');
@@ -45,11 +118,11 @@ const DashboardResumeForm = () => {
         });
 
         return () => unsubscribe();
-    }, [navigate]);
+    }, [navigate, initialResumeData]);
 
-    const handleResumeSelect = (resume) => {
+    // Keep all your existing handler functions (handleResumeSelect, handleInputChange, etc.)
+    const handleResumeSelect = useCallback((resume) => {
         setSelectedResume(resume);
-        setEditableResume({...resume});
         setEditableData({
             ...resume,
             skills: Array.isArray(resume.skills) ? resume.skills : [],
@@ -62,60 +135,45 @@ const DashboardResumeForm = () => {
         });
         setCurrentStep(0);
         setIsEditing(false);
-    };
+    }, []);
 
-    // Handle input change for fields and array-based sections
-    const handleInputChange = (section, value, index, field) => {
+    const handleInputChange = useCallback((section, value, index, field) => {
         setEditableData((prev) => {
             const newData = {...prev};
 
             if (section === 'skills') {
-                // Handle skills array
-                const skills = Array.isArray(prev.skills)
-                    ? [...prev.skills]
-                    : [];
+                const skills = [
+                    ...(Array.isArray(prev.skills) ? prev.skills : []),
+                ];
                 if (typeof index === 'number') {
                     skills[index] = value;
                 }
                 newData.skills = skills;
             } else if (typeof index === 'number' && field) {
-                // Handle array fields (experience, education, skills)
-                if (!newData[section]) newData[section] = [];
-                if (!newData[section][index]) newData[section][index] = {};
-                newData[section][index] = {
-                    ...newData[section][index],
+                if (!Array.isArray(newData[section])) {
+                    newData[section] = [];
+                }
+                const sectionArray = [...newData[section]];
+                if (!sectionArray[index]) {
+                    sectionArray[index] = {};
+                }
+                sectionArray[index] = {...sectionArray[index], [field]: value};
+                newData[section] = sectionArray;
+            } else if (field) {
+                if (!newData[section]) {
+                    newData[section] = {};
+                }
+                newData[section] = {
+                    ...newData[section],
                     [field]: value,
                 };
-            } else if (field) {
-                // Handle nested objects (personalDetail)
-                if (!newData[section]) newData[section] = {};
-                newData[section][field] = value;
             } else {
-                // Handle direct fields (summary, profilePhoto)
                 newData[section] = value;
             }
 
             return newData;
         });
-    };
-
-    // const handleSubmit = async () => {
-    //     if (!selectedResume || !editableResume) return;
-
-    //     try {
-    //         const resumeRef = doc(
-    //             projectFirestore,
-    //             'resumes',
-    //             selectedResume.id,
-    //         );
-    //         await updateDoc(resumeRef, editableResume);
-    //         alert('Resume updated successfully!');
-    //         navigate('/dashboard'); // Redirect or show a success message
-    //     } catch (error) {
-    //         console.error('Error updating resume:', error);
-    //         alert('Failed to update resume. Please try again.');
-    //     }
-    // };
+    }, []);
 
     const handleSaveSection = async () => {
         if (!user || !selectedResume) return;
@@ -137,21 +195,15 @@ const DashboardResumeForm = () => {
                 selectedResume.id,
             );
 
-            // Create an update object with only the changed section
-            const updateData = {
+            await updateDoc(resumeRef, {
                 [sectionKey]: editableData[sectionKey] || null,
-            };
+            });
 
-            // Update the document with only the changed section
-            await updateDoc(resumeRef, updateData);
-
-            // Update local state
             setSelectedResume((prev) => ({
                 ...prev,
                 [sectionKey]: editableData[sectionKey],
             }));
 
-            // Update resumes list
             setResumes((prev) =>
                 prev.map((resume) =>
                     resume.id === selectedResume.id
@@ -170,100 +222,129 @@ const DashboardResumeForm = () => {
         }
     };
 
-    const handleNextStep = () => {
+    const handleNextStep = useCallback(() => {
         if (currentStep < 5) {
             setCurrentStep((prevStep) => prevStep + 1);
         }
-    };
+    }, [currentStep]);
 
-    const handlePreviousStep = () => {
+    const handlePreviousStep = useCallback(() => {
         if (currentStep > 0) {
             setCurrentStep((prevStep) => prevStep - 1);
         }
-    };
+    }, [currentStep]);
+
+    // Styled input components
+    const StyledInput = memo(
+        ({type = 'text', value, onChange, readOnly, className = '', field}) => (
+            <MemoizedInput
+                type={type}
+                value={value}
+                onChange={(newValue) => onChange(newValue, field)}
+                readOnly={readOnly}
+                className={className}
+            />
+        ),
+    );
+
+    const StyledTextArea = memo(
+        ({value, onChange, readOnly, rows = 5, field}) => (
+            <MemoizedTextArea
+                value={value}
+                onChange={(newValue) => onChange(newValue, field)}
+                readOnly={readOnly}
+                rows={rows}
+            />
+        ),
+    );
+
+    const renderEditButton = () => (
+        <div className='flex justify-end mb-6'>
+            {!isEditing ? (
+                <button
+                    onClick={() => setIsEditing(true)}
+                    className='group bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center'
+                >
+                    <FontAwesomeIcon icon={faEdit} className='mr-2' />
+                    Edit Section
+                </button>
+            ) : (
+                <div className='space-x-3'>
+                    <button
+                        onClick={handleSaveSection}
+                        disabled={isSaving}
+                        className={`group bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center ${
+                            isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                    >
+                        <FontAwesomeIcon
+                            icon={isSaving ? faSpinner : faSave}
+                            className={`mr-2 ${isSaving ? 'animate-spin' : ''}`}
+                        />
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                        onClick={() => {
+                            setIsEditing(false);
+                            setEditableData({...selectedResume});
+                        }}
+                        disabled={isSaving}
+                        className='bg-white text-gray-700 px-6 py-3 rounded-full hover:bg-gray-50 border border-[#CDC1FF]/20 transition-all duration-300 flex items-center'
+                    >
+                        <FontAwesomeIcon icon={faTimes} className='mr-2' />
+                        Cancel
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 
     const renderStepContent = () => {
         if (!selectedResume) return null;
 
-        const renderEditButton = () => (
-            <div className='flex justify-end mb-4'>
-                {!isEditing ? (
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className='bg-blue-500 text-white px-4 py-2 rounded'
-                    >
-                        Edit
-                    </button>
-                ) : (
-                    <div className='space-x-2'>
-                        <button
-                            onClick={handleSaveSection}
-                            disabled={isSaving}
-                            className={`${
-                                isSaving
-                                    ? 'bg-gray-400'
-                                    : 'bg-green-500 hover:bg-green-600'
-                            } text-white px-4 py-2 rounded transition`}
-                        >
-                            {isSaving ? 'Saving...' : 'Save'}
-                        </button>
-                        <button
-                            onClick={() => {
-                                setIsEditing(false);
-                                setEditableData({...selectedResume}); // Reset to original data
-                            }}
-                            className='bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition'
-                            disabled={isSaving}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
+        const sectionStyles =
+            'bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6';
+        const sectionHeaderStyles = 'text-2xl font-bold text-gray-800 mb-6';
 
         switch (currentStep) {
             case 0: // Profile Photo
                 return (
-                    <div className='profile-photo space-y-4'>
-                        <h2 className='text-lg font-semibold mb-3'>
-                            Profile Photo
-                        </h2>
+                    <div className={sectionStyles}>
+                        <h2 className={sectionHeaderStyles}>Profile Photo</h2>
                         {renderEditButton()}
 
-                        <div className='flex flex-col items-center space-y-4'>
-                            {/* Display current profile photo if exists */}
+                        <div className='flex flex-col items-center space-y-6'>
                             {editableData.imageUrl ? (
-                                <div className='relative'>
-                                    <img
-                                        src={editableData.imageUrl}
-                                        alt='Profile'
-                                        className='w-32 h-32 rounded-full object-cover'
-                                    />
+                                <div className='relative group'>
+                                    <div className='w-32 h-32 rounded-full overflow-hidden border-4 border-[#CDC1FF]/20 transition-all duration-300 group-hover:border-[#BFECFF]/40'>
+                                        <img
+                                            src={editableData.imageUrl}
+                                            alt='Profile'
+                                            className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-110'
+                                        />
+                                    </div>
                                     {isEditing && (
                                         <button
-                                            onClick={() => {
+                                            onClick={() =>
                                                 setEditableData((prev) => ({
                                                     ...prev,
                                                     imageUrl: null,
-                                                }));
-                                            }}
-                                            className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition'
-                                            title='Remove Photo'
+                                                }))
+                                            }
+                                            className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:from-red-600 hover:to-red-700 transition-all duration-300'
                                         >
-                                            ×
+                                            <FontAwesomeIcon icon={faTimes} />
                                         </button>
                                     )}
                                 </div>
                             ) : (
-                                <div className='w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center'>
+                                <div className='w-32 h-32 rounded-full bg-gradient-to-r from-[#CDC1FF]/10 to-[#BFECFF]/10 flex items-center justify-center border-4 border-[#CDC1FF]/20'>
                                     <span className='text-gray-400'>
                                         No Photo
                                     </span>
                                 </div>
                             )}
 
-                            {/* Photo upload section */}
                             {isEditing && (
                                 <div className='w-full max-w-md'>
                                     <ProfilePhotoUpload
@@ -272,62 +353,7 @@ const DashboardResumeForm = () => {
                                                 ...prev,
                                                 imageUrl: downloadURL,
                                             }));
-
-                                            // Automatically save after upload
-                                            const handleSave = async () => {
-                                                if (!selectedResume) return;
-
-                                                try {
-                                                    setIsSaving(true);
-                                                    const resumeRef = doc(
-                                                        projectFirestore,
-                                                        'resumes',
-                                                        selectedResume.id,
-                                                    );
-
-                                                    await updateDoc(resumeRef, {
-                                                        imageUrl: downloadURL,
-                                                    });
-
-                                                    setSelectedResume(
-                                                        (prev) => ({
-                                                            ...prev,
-                                                            imageUrl:
-                                                                downloadURL,
-                                                        }),
-                                                    );
-
-                                                    // Update resumes list
-                                                    setResumes((prev) =>
-                                                        prev.map((resume) =>
-                                                            resume.id ===
-                                                            selectedResume.id
-                                                                ? {
-                                                                      ...resume,
-                                                                      imageUrl:
-                                                                          downloadURL,
-                                                                  }
-                                                                : resume,
-                                                        ),
-                                                    );
-
-                                                    alert(
-                                                        'Profile photo updated successfully!',
-                                                    );
-                                                } catch (error) {
-                                                    console.error(
-                                                        'Error updating profile photo:',
-                                                        error,
-                                                    );
-                                                    alert(
-                                                        'Failed to update profile photo. Please try again.',
-                                                    );
-                                                } finally {
-                                                    setIsSaving(false);
-                                                }
-                                            };
-
-                                            handleSave();
+                                            handleSaveSection();
                                         }}
                                     />
                                 </div>
@@ -338,20 +364,20 @@ const DashboardResumeForm = () => {
 
             case 1: // Personal Details
                 return (
-                    <div className='personal-details space-y-4'>
-                        <h2 className='text-lg font-semibold mb-3'>
+                    <div className={sectionStyles}>
+                        <h2 className={sectionHeaderStyles}>
                             Personal Details
                         </h2>
                         {renderEditButton()}
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                             {['name', 'email', 'phone', 'address'].map(
                                 (field) => (
-                                    <div key={field}>
-                                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                                    <div key={field} className='space-y-2'>
+                                        <label className='block text-sm font-medium text-gray-700'>
                                             {field.charAt(0).toUpperCase() +
                                                 field.slice(1)}
                                         </label>
-                                        <input
+                                        <StyledInput
                                             type={
                                                 field === 'email'
                                                     ? 'email'
@@ -362,20 +388,16 @@ const DashboardResumeForm = () => {
                                                     field
                                                 ] || ''
                                             }
-                                            onChange={(e) =>
+                                            onChange={(value) =>
                                                 handleInputChange(
                                                     'personalDetail',
-                                                    e.target.value,
+                                                    value,
                                                     null,
                                                     field,
                                                 )
                                             }
                                             readOnly={!isEditing}
-                                            className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                                                isEditing
-                                                    ? 'bg-white'
-                                                    : 'bg-gray-100'
-                                            }`}
+                                            field={field}
                                         />
                                     </div>
                                 ),
@@ -386,235 +408,277 @@ const DashboardResumeForm = () => {
 
             case 2: // Professional Summary
                 return (
-                    <div className='summary space-y-4'>
-                        <h2 className='text-lg font-semibold mb-3'>
+                    <div className={sectionStyles}>
+                        <h2 className={sectionHeaderStyles}>
                             Professional Summary
                         </h2>
                         {renderEditButton()}
-                        <textarea
+                        <StyledTextArea
                             value={editableData.summary || ''}
-                            onChange={(e) =>
-                                handleInputChange('summary', e.target.value)
+                            onChange={(value) =>
+                                handleInputChange('summary', value)
                             }
                             readOnly={!isEditing}
                             rows={5}
-                            className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                                isEditing ? 'bg-white' : 'bg-gray-100'
-                            }`}
                         />
                     </div>
                 );
 
             case 3: // Work Experience
                 return (
-                    <div className='experience space-y-4'>
-                        <h2 className='text-lg font-semibold mb-3'>
-                            Work Experience
-                        </h2>
+                    <div className={sectionStyles}>
+                        <h2 className={sectionHeaderStyles}>Work Experience</h2>
                         {renderEditButton()}
-                        <div className='space-y-4'>
-                            {Array.isArray(editableData.experience)
-                                ? editableData.experience.map((exp, index) => (
-                                      <div
-                                          key={index}
-                                          className='relative mb-4 p-4 border rounded-md bg-gray-50'
-                                      >
-                                          {isEditing && (
-                                              <button
-                                                  onClick={() => {
-                                                      setEditableData(
-                                                          (prev) => ({
-                                                              ...prev,
-                                                              experience:
-                                                                  prev.experience.filter(
-                                                                      (_, i) =>
-                                                                          i !==
-                                                                          index,
-                                                                  ),
-                                                          }),
-                                                      );
-                                                  }}
-                                                  className='absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition'
-                                                  title='Remove Experience'
-                                              >
-                                                  <span>×</span>
-                                              </button>
-                                          )}
-                                          {[
-                                              'company',
-                                              'position',
-                                              'startDate',
-                                              'endDate',
-                                              'description',
-                                          ].map((field) => (
-                                              <div key={field} className='mb-3'>
-                                                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                                                      {field
-                                                          .charAt(0)
-                                                          .toUpperCase() +
-                                                          field.slice(1)}
-                                                  </label>
-                                                  <input
-                                                      type='text'
-                                                      value={exp[field] || ''}
-                                                      onChange={(e) =>
-                                                          handleInputChange(
-                                                              'experience',
-                                                              e.target.value,
-                                                              index,
-                                                              field,
-                                                          )
-                                                      }
-                                                      readOnly={!isEditing}
-                                                      className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                                                          isEditing
-                                                              ? 'bg-white'
-                                                              : 'bg-gray-100'
-                                                      }`}
-                                                  />
-                                              </div>
-                                          ))}
-                                      </div>
-                                  ))
-                                : null}
+                        <div className='space-y-6'>
+                            {Array.isArray(editableData.experience) &&
+                                editableData.experience.map((exp, index) => (
+                                    <div
+                                        key={index}
+                                        className='relative p-6 rounded-lg bg-gradient-to-r from-[#CDC1FF]/5 to-[#BFECFF]/5 border border-[#CDC1FF]/10'
+                                    >
+                                        {isEditing && (
+                                            <button
+                                                onClick={() => {
+                                                    setEditableData((prev) => ({
+                                                        ...prev,
+                                                        experience:
+                                                            prev.experience.filter(
+                                                                (_, i) =>
+                                                                    i !== index,
+                                                            ),
+                                                    }));
+                                                }}
+                                                className='absolute -top-3 -right-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:from-red-600 hover:to-red-700 transition-all duration-300'
+                                            >
+                                                <FontAwesomeIcon
+                                                    icon={faTrash}
+                                                />
+                                            </button>
+                                        )}
+                                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                            {[
+                                                'company',
+                                                'position',
+                                                'startDate',
+                                                'endDate',
+                                                'description',
+                                            ].map((field) => (
+                                                <div
+                                                    key={field}
+                                                    className={`space-y-2 ${
+                                                        field === 'description'
+                                                            ? 'md:col-span-2'
+                                                            : ''
+                                                    }`}
+                                                >
+                                                    <label className='block text-sm font-medium text-gray-700'>
+                                                        {field
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                            field
+                                                                .slice(1)
+                                                                .replace(
+                                                                    /([A-Z])/g,
+                                                                    ' $1',
+                                                                )}
+                                                    </label>
+                                                    {field === 'description' ? (
+                                                        <StyledTextArea
+                                                            value={
+                                                                exp[field] || ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleInputChange(
+                                                                    'experience',
+                                                                    e.target
+                                                                        .value,
+                                                                    index,
+                                                                    field,
+                                                                )
+                                                            }
+                                                            readOnly={
+                                                                !isEditing
+                                                            }
+                                                            rows={3}
+                                                        />
+                                                    ) : (
+                                                        <StyledInput
+                                                            type={
+                                                                field.includes(
+                                                                    'Date',
+                                                                )
+                                                                    ? 'date'
+                                                                    : 'text'
+                                                            }
+                                                            value={
+                                                                exp[field] || ''
+                                                            }
+                                                            onChange={(value) =>
+                                                                handleInputChange(
+                                                                    'experience',
+                                                                    value,
+                                                                    index,
+                                                                    field,
+                                                                )
+                                                            }
+                                                            readOnly={
+                                                                !isEditing
+                                                            }
+                                                            field={field}
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
                             {isEditing && (
                                 <button
                                     onClick={() => {
-                                        const newExperience = {
-                                            company: '',
-                                            position: '',
-                                            startDate: '',
-                                            endDate: '',
-                                            description: '',
-                                        };
                                         setEditableData((prev) => ({
                                             ...prev,
-                                            experience: Array.isArray(
-                                                prev.experience,
-                                            )
-                                                ? [
-                                                      ...prev.experience,
-                                                      newExperience,
-                                                  ]
-                                                : [newExperience],
+                                            experience: [
+                                                ...(prev.experience || []),
+                                                {
+                                                    company: '',
+                                                    position: '',
+                                                    startDate: '',
+                                                    endDate: '',
+                                                    description: '',
+                                                },
+                                            ],
                                         }));
                                     }}
-                                    className='w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition'
+                                    className='w-full bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center justify-center'
                                 >
+                                    <FontAwesomeIcon
+                                        icon={faPlus}
+                                        className='mr-2'
+                                    />
                                     Add Experience
                                 </button>
                             )}
                         </div>
                     </div>
                 );
-
             case 4: // Education
                 return (
-                    <div className='education space-y-4'>
-                        <h2 className='text-lg font-semibold mb-3'>
-                            Education
-                        </h2>
+                    <div className={sectionStyles}>
+                        <h2 className={sectionHeaderStyles}>Education</h2>
                         {renderEditButton()}
-                        <div className='space-y-4'>
-                            {Array.isArray(editableData.educationDetail)
-                                ? editableData.educationDetail.map(
-                                      (edu, index) => (
-                                          <div
-                                              key={index}
-                                              className='relative mb-4 p-4 border rounded-md bg-gray-50'
-                                          >
-                                              {isEditing && (
-                                                  <button
-                                                      onClick={() => {
-                                                          setEditableData(
-                                                              (prev) => ({
-                                                                  ...prev,
-                                                                  educationDetail:
-                                                                      prev.educationDetail.filter(
-                                                                          (
-                                                                              _,
-                                                                              i,
-                                                                          ) =>
-                                                                              i !==
-                                                                              index,
-                                                                      ),
-                                                              }),
-                                                          );
-                                                      }}
-                                                      className='absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition'
-                                                      title='Remove Education'
-                                                  >
-                                                      <span>×</span>
-                                                  </button>
-                                              )}
-                                              {[
-                                                  'institution',
-                                                  'course',
-                                                  'startDate',
-                                                  'endDate',
-                                                  'result',
-                                              ].map((field) => (
-                                                  <div
-                                                      key={field}
-                                                      className='mb-3'
-                                                  >
-                                                      <label className='block text-sm font-medium text-gray-700 mb-1'>
-                                                          {field
-                                                              .charAt(0)
-                                                              .toUpperCase() +
-                                                              field.slice(1)}
-                                                      </label>
-                                                      <input
-                                                          type='text'
-                                                          value={
-                                                              edu[field] || ''
-                                                          }
-                                                          onChange={(e) =>
-                                                              handleInputChange(
-                                                                  'educationDetail',
-                                                                  e.target
-                                                                      .value,
-                                                                  index,
-                                                                  field,
-                                                              )
-                                                          }
-                                                          readOnly={!isEditing}
-                                                          className={`w-full px-3 py-2 border border-gray-300 rounded-md ${
-                                                              isEditing
-                                                                  ? 'bg-white'
-                                                                  : 'bg-gray-100'
-                                                          }`}
-                                                      />
-                                                  </div>
-                                              ))}
-                                          </div>
-                                      ),
-                                  )
-                                : null}
+                        <div className='space-y-6'>
+                            {Array.isArray(editableData.educationDetail) &&
+                                editableData.educationDetail.map(
+                                    (edu, index) => (
+                                        <div
+                                            key={index}
+                                            className='relative p-6 rounded-lg bg-gradient-to-r from-[#CDC1FF]/5 to-[#BFECFF]/5 border border-[#CDC1FF]/10'
+                                        >
+                                            {isEditing && (
+                                                <button
+                                                    onClick={() => {
+                                                        setEditableData(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                educationDetail:
+                                                                    prev.educationDetail.filter(
+                                                                        (
+                                                                            _,
+                                                                            i,
+                                                                        ) =>
+                                                                            i !==
+                                                                            index,
+                                                                    ),
+                                                            }),
+                                                        );
+                                                    }}
+                                                    className='absolute -top-3 -right-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:from-red-600 hover:to-red-700 transition-all duration-300'
+                                                >
+                                                    <FontAwesomeIcon
+                                                        icon={faTrash}
+                                                    />
+                                                </button>
+                                            )}
+                                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                                {[
+                                                    'institution',
+                                                    'course',
+                                                    'startDate',
+                                                    'endDate',
+                                                    'result',
+                                                ].map((field) => (
+                                                    <div
+                                                        key={field}
+                                                        className={`space-y-2 ${
+                                                            field === 'result'
+                                                                ? 'md:col-span-2'
+                                                                : ''
+                                                        }`}
+                                                    >
+                                                        <label className='block text-sm font-medium text-gray-700'>
+                                                            {field
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                                field
+                                                                    .slice(1)
+                                                                    .replace(
+                                                                        /([A-Z])/g,
+                                                                        ' $1',
+                                                                    )}
+                                                        </label>
+                                                        <StyledInput
+                                                            type={
+                                                                field.includes(
+                                                                    'Date',
+                                                                )
+                                                                    ? 'date'
+                                                                    : 'text'
+                                                            }
+                                                            value={
+                                                                edu[field] || ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleInputChange(
+                                                                    'educationDetail',
+                                                                    e.target
+                                                                        .value,
+                                                                    index,
+                                                                    field,
+                                                                )
+                                                            }
+                                                            readOnly={
+                                                                !isEditing
+                                                            }
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ),
+                                )}
                             {isEditing && (
                                 <button
                                     onClick={() => {
-                                        const newEducation = {
-                                            institution: '',
-                                            course: '',
-                                            startDate: '',
-                                            endDate: '',
-                                            result: '',
-                                        };
                                         setEditableData((prev) => ({
                                             ...prev,
-                                            educationDetail: Array.isArray(
-                                                prev.educationDetail,
-                                            )
-                                                ? [
-                                                      ...prev.educationDetail,
-                                                      newEducation,
-                                                  ]
-                                                : [newEducation],
+                                            educationDetail: [
+                                                ...(prev.educationDetail || []),
+                                                {
+                                                    institution: '',
+                                                    course: '',
+                                                    startDate: '',
+                                                    endDate: '',
+                                                    result: '',
+                                                },
+                                            ],
                                         }));
                                     }}
-                                    className='w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition'
+                                    className='w-full bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center justify-center'
                                 >
+                                    <FontAwesomeIcon
+                                        icon={faPlus}
+                                        className='mr-2'
+                                    />
                                     Add Education
                                 </button>
                             )}
@@ -624,74 +688,77 @@ const DashboardResumeForm = () => {
 
             case 5: // Skills
                 return (
-                    <div className='skills space-y-4'>
-                        <h2 className='text-lg font-semibold mb-3'>Skills</h2>
+                    <div className={sectionStyles}>
+                        <h2 className={sectionHeaderStyles}>Skills</h2>
                         {renderEditButton()}
-                        {Array.isArray(editableData.skills) ? (
-                            <div className='space-y-2'>
-                                {editableData.skills.map((skill, index) => (
-                                    <div
-                                        key={index}
-                                        className='flex gap-2 mb-2 items-center'
-                                    >
-                                        <input
-                                            type='text'
-                                            value={skill || ''}
-                                            onChange={(e) =>
-                                                handleInputChange(
-                                                    'skills',
-                                                    e.target.value,
-                                                    index,
-                                                )
-                                            }
-                                            readOnly={!isEditing}
-                                            className={`flex-1 px-3 py-2 border border-gray-300 rounded-md ${
-                                                isEditing
-                                                    ? 'bg-white'
-                                                    : 'bg-gray-100'
-                                            }`}
-                                        />
-                                        {isEditing && (
-                                            <button
-                                                onClick={() => {
-                                                    setEditableData((prev) => ({
-                                                        ...prev,
-                                                        skills: prev.skills.filter(
-                                                            (_, i) =>
-                                                                i !== index,
-                                                        ),
-                                                    }));
-                                                }}
-                                                className='bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 transition'
-                                                title='Remove Skill'
-                                            >
-                                                <span>×</span>
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                                {isEditing && (
-                                    <button
-                                        onClick={() => {
-                                            const newSkills = [
-                                                ...(editableData.skills || []),
-                                                '',
-                                            ];
-                                            setEditableData((prev) => ({
-                                                ...prev,
-                                                skills: newSkills,
-                                            }));
-                                        }}
-                                        className='mt-2 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition'
-                                    >
-                                        Add Skill
-                                    </button>
-                                )}
-                            </div>
-                        ) : (
-                            <div>
-                                {isEditing ? (
-                                    <div>
+                        <div className='space-y-4'>
+                            {Array.isArray(editableData.skills) ? (
+                                <div className='space-y-3'>
+                                    {editableData.skills.map((skill, index) => (
+                                        <div
+                                            key={index}
+                                            className='flex gap-3 items-center'
+                                        >
+                                            <StyledInput
+                                                value={skill || ''}
+                                                onChange={(value) =>
+                                                    handleInputChange(
+                                                        'skills',
+                                                        value,
+                                                        index,
+                                                    )
+                                                }
+                                                readOnly={!isEditing}
+                                                className='flex-1'
+                                                field={`skill-${index}`}
+                                            />
+                                            {isEditing && (
+                                                <button
+                                                    onClick={() => {
+                                                        setEditableData(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                skills: prev.skills.filter(
+                                                                    (_, i) =>
+                                                                        i !==
+                                                                        index,
+                                                                ),
+                                                            }),
+                                                        );
+                                                    }}
+                                                    className='bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:from-red-600 hover:to-red-700 transition-all duration-300'
+                                                >
+                                                    <FontAwesomeIcon
+                                                        icon={faTrash}
+                                                    />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {isEditing && (
+                                        <button
+                                            onClick={() => {
+                                                setEditableData((prev) => ({
+                                                    ...prev,
+                                                    skills: [
+                                                        ...(prev.skills || []),
+                                                        '',
+                                                    ],
+                                                }));
+                                            }}
+                                            className='w-full bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center justify-center'
+                                        >
+                                            <FontAwesomeIcon
+                                                icon={faPlus}
+                                                className='mr-2'
+                                            />
+                                            Add Skill
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className='text-center'>
+                                    {isEditing ? (
                                         <button
                                             onClick={() => {
                                                 setEditableData((prev) => ({
@@ -699,18 +766,22 @@ const DashboardResumeForm = () => {
                                                     skills: [''],
                                                 }));
                                             }}
-                                            className='bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition'
+                                            className='bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center justify-center mx-auto'
                                         >
+                                            <FontAwesomeIcon
+                                                icon={faPlus}
+                                                className='mr-2'
+                                            />
                                             Add First Skill
                                         </button>
-                                    </div>
-                                ) : (
-                                    <p className='text-center text-gray-500'>
-                                        No skills available.
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                                    ) : (
+                                        <p className='text-gray-500'>
+                                            No skills available.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 );
 
@@ -729,109 +800,174 @@ const DashboardResumeForm = () => {
     ];
 
     return (
-        <div className='bg-amber-50 text-gray-800 min-h-screen py-3 px-3'>
-            <div className='p-0 sm:p-3'>
-                {loading && (
-                    <div className='text-center w-full'>
-                        <p>Loading resumes...</p>
+        <div className='min-h-screen bg-[#FBFBFB]'>
+            <div className='container mx-auto px-4 py-16'>
+                {/* Header */}
+                <div className='text-center mb-10'>
+                    <div className='relative'>
+                        <div className='absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-[#CDC1FF] via-[#BFECFF] to-[#FFCCEA]'></div>
+                        <h1 className='relative text-3xl font-bold text-gray-800 mb-2'>
+                            Manage Your{' '}
+                            <span className='bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] bg-clip-text text-transparent'>
+                                Resumes
+                            </span>
+                        </h1>
                     </div>
-                )}
+                </div>
 
-                {error && (
-                    <div className='text-center w-full text-red-500'>
+                {loading ? (
+                    <div className='flex justify-center items-center py-12'>
+                        <div className='animate-pulse text-[#CDC1FF] flex items-center gap-2'>
+                            <FontAwesomeIcon
+                                icon={faSpinner}
+                                className='animate-spin'
+                            />
+                            <span>Loading resumes...</span>
+                        </div>
+                    </div>
+                ) : error ? (
+                    <div className='text-center text-red-500 py-8'>
                         <p>{error}</p>
                     </div>
-                )}
-
-                {!loading && !error && resumes.length === 0 && (
-                    <div className='text-center w-full'>
+                ) : resumes.length === 0 ? (
+                    <div className='text-center text-gray-600 py-8'>
                         <p>No resumes found. Create your first resume!</p>
                     </div>
-                )}
-
-                {!loading && !error && (
-                    <div className='flex flex-col'>
+                ) : (
+                    <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
                         {/* Resume List Sidebar */}
-                        <div className='w-full bg-white p-4 rounded-lg shadow-md mb-4'>
-                            <h2 className='text-xl font-bold mb-4'>
-                                Your Resumes
-                            </h2>
-                            {resumes.map((resume) => (
-                                <div
-                                    key={resume.id}
-                                    onClick={() => handleResumeSelect(resume)}
-                                    className={`cursor-pointer p-3 mb-2 rounded ${
-                                        selectedResume?.id === resume.id
-                                            ? 'bg-blue-100'
-                                            : 'hover:bg-gray-100'
-                                    }`}
-                                >
-                                    <h3 className='font-semibold'>
-                                        {resume.templateName ||
-                                            'Untitled Resume'}
-                                    </h3>
-                                    <p className='text-sm text-gray-500'>
-                                        Created:{' '}
-                                        {new Date(
-                                            resume.createdAt.seconds * 1000,
-                                        ).toLocaleDateString()}
-                                    </p>
+                        {/* <div className='lg:col-span-1'>
+                            <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                                <h2 className='text-xl font-bold text-gray-800 mb-6'>
+                                    Your Resumes
+                                </h2>
+                                <div className='space-y-2'>
+                                    {resumes.map((resume) => (
+                                        <button
+                                            key={resume.id}
+                                            onClick={() =>
+                                                handleResumeSelect(resume)
+                                            }
+                                            className={`w-full text-left p-4 rounded-lg transition-all duration-300
+                                                ${
+                                                    selectedResume?.id ===
+                                                    resume.id
+                                                        ? 'bg-gradient-to-r from-[#CDC1FF]/20 to-[#BFECFF]/20 shadow-md'
+                                                        : 'hover:bg-gray-50'
+                                                }
+                                            `}
+                                        >
+                                            <h3 className='font-semibold text-gray-800'>
+                                                {resume.templateName ||
+                                                    'Untitled Resume'}
+                                            </h3>
+                                            <p className='text-sm text-gray-500 mt-1'>
+                                                Created:{' '}
+                                                {new Date(
+                                                    resume.createdAt.seconds *
+                                                        1000,
+                                                ).toLocaleDateString()}
+                                            </p>
+                                        </button>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-
-                        {/* Resume Details View */}
-                        <div className='w-full bg-white p-4 rounded-lg shadow-md'>
+                            </div>
+                        </div> */}
+                        {/* Main Content Area */}
+                        <div className='lg:col-span-3'>
                             {selectedResume ? (
                                 <>
                                     {/* Step Navigation */}
-                                    <div className='flex justify-between mb-4'>
-                                        {stepLabels.map((label, index) => (
-                                            <button
-                                                key={label}
-                                                onClick={() =>
-                                                    setCurrentStep(index)
-                                                }
-                                                className={`px-3 py-1 rounded-md text-sm ${
-                                                    currentStep === index
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'bg-gray-200 text-gray-700'
-                                                }`}
-                                            >
-                                                {label}
-                                            </button>
-                                        ))}
+                                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6 mb-8'>
+                                        <div className='flex justify-center mb-6'>
+                                            <div className='flex space-x-2'>
+                                                {[0, 1, 2, 3, 4, 5].map(
+                                                    (step) => (
+                                                        <div
+                                                            key={step}
+                                                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                                                                step ===
+                                                                currentStep
+                                                                    ? 'bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] transform scale-125'
+                                                                    : step <
+                                                                      currentStep
+                                                                    ? 'bg-[#CDC1FF]/50'
+                                                                    : 'bg-gray-200'
+                                                            }`}
+                                                        />
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className='overflow-x-auto'>
+                                            <div className='flex gap-2 pb-4'>
+                                                {stepLabels.map(
+                                                    (label, index) => (
+                                                        <button
+                                                            key={label}
+                                                            onClick={() =>
+                                                                setCurrentStep(
+                                                                    index,
+                                                                )
+                                                            }
+                                                            className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300
+                                                            ${
+                                                                currentStep ===
+                                                                index
+                                                                    ? 'bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold shadow-lg'
+                                                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-[#CDC1FF]/20'
+                                                            }
+                                                        `}
+                                                        >
+                                                            <span className='mr-2'>
+                                                                {index + 1}.
+                                                            </span>
+                                                            {label}
+                                                        </button>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {/* Step Content */}
-                                    <div className='mt-4'>
-                                        {renderStepContent()}
-                                    </div>
+                                    {/* Content Area */}
+                                    {renderStepContent()}
 
                                     {/* Navigation Buttons */}
-                                    <div className='flex justify-between mt-4'>
+                                    <div className='flex justify-between mt-8'>
                                         {currentStep > 0 && (
                                             <button
                                                 onClick={handlePreviousStep}
-                                                className='bg-gray-300 text-gray-700 px-4 py-2 rounded-md'
+                                                className='group bg-white text-gray-700 px-6 py-3 rounded-full hover:bg-gray-50 border border-[#CDC1FF]/20 transition-all duration-300 flex items-center'
                                             >
+                                                <FontAwesomeIcon
+                                                    icon={faArrowLeft}
+                                                    className='mr-2 transform group-hover:-translate-x-1 transition-transform duration-300'
+                                                />
                                                 Previous
                                             </button>
                                         )}
                                         {currentStep < 5 && (
                                             <button
                                                 onClick={handleNextStep}
-                                                className='bg-blue-600 text-white px-4 py-2 rounded-md'
+                                                className='group bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center ml-auto'
                                             >
                                                 Next
+                                                <FontAwesomeIcon
+                                                    icon={faArrowRight}
+                                                    className='ml-2 transform group-hover:translate-x-1 transition-transform duration-300'
+                                                />
                                             </button>
                                         )}
                                     </div>
                                 </>
                             ) : (
-                                <p className='text-center text-gray-500'>
-                                    Select a resume to view details
-                                </p>
+                                <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                                    <p className='text-center text-gray-500'>
+                                        Select a resume from the list to view
+                                        and edit details
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -841,4 +977,4 @@ const DashboardResumeForm = () => {
     );
 };
 
-export default DashboardResumeForm;
+export default memo(DashboardResumeForm);

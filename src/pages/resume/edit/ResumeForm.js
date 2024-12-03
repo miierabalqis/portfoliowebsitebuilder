@@ -1,15 +1,18 @@
 import React, {useState, useEffect} from 'react';
-// import {saveResumeData} from '../../../firebase/helpers';
 import {projectAuth} from '../../../firebase/config';
-// import {ref, uploadBytes, getDownloadURL} from 'firebase/storage';
 import ProfilePhotoUpload from '../../resume/edit/PhotoUpload';
 import {doc, getDoc, setDoc} from 'firebase/firestore';
 import {projectFirestore as db} from '../../../firebase/config';
 import {useParams} from 'react-router-dom';
 import {serverTimestamp} from 'firebase/firestore';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {
+    faArrowRight,
+    faArrowLeft,
+    faSpinner,
+} from '@fortawesome/free-solid-svg-icons';
 
-// Import separate section
-// import ProfilePhoto from './section/ProfilePhoto';
+// Import separate section components
 import PersonalDetails from './section/PersonalDetails';
 import Summary from './section/SummaryForm';
 import Experience from './section/ExperienceForm';
@@ -54,9 +57,7 @@ function ResumeForm() {
     const [currentStep, setCurrentStep] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState(null);
-    // const [templateId, setTemplateId] = useState(null); // Store selected templateId
 
-    // Fetch user data on component mount
     useEffect(() => {
         const fetchResumeData = async () => {
             const user = projectAuth.currentUser;
@@ -66,9 +67,9 @@ function ResumeForm() {
                 const docRef = doc(
                     db,
                     'resumes',
-                    templateId, //First level: templateId document
-                    'userEmail', // Subcollection: userEmail
-                    user.email, // Document ID: also userEmail
+                    templateId,
+                    'userEmail',
+                    user.email,
                 );
                 const docSnap = await getDoc(docRef);
 
@@ -139,29 +140,12 @@ function ResumeForm() {
         }));
     };
 
-    // const handleSkillsChange = (e) => {
-    //     const skills = e.target.value.split(',').map((skill) => skill.trim());
-    //     setResumeData((prev) => ({...prev, skills}));
-    // };
-
-    // const handleEducationChange = (index, field, value) => {
-    //     setResumeData((prev) => {
-    //         const updatedEducation = [...prev.educationDetail];
-    //         updatedEducation[index] = {
-    //             ...updatedEducation[index],
-    //             [field]: value,
-    //         };
-    //         return {...prev, educationDetail: updatedEducation};
-    //     });
-    // };
-
     const handleNext = () => {
         if (currentStep < 5) {
             setCurrentStep((prevStep) => prevStep + 1);
         }
     };
 
-    // Navigation handlers
     const handlePrevious = () => {
         if (currentStep > 0) {
             setCurrentStep((prevStep) => prevStep - 1);
@@ -182,24 +166,19 @@ function ResumeForm() {
         setSaveStatus('saving');
 
         try {
-            // Create a reference to the specific resume document
             const docRef = doc(db, 'resumes', resumeId);
-
-            // Prepare resume data with metadata
             const resumeDataWithMetadata = {
                 ...resumeData,
-                userId: user.uid, // Add user ID for querying
-                userEmail: user.email, // Add user email for querying
+                userId: user.uid,
+                userEmail: user.email,
                 templateId: templateId,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             };
 
-            // Set the document with the unique resumeId
             await setDoc(docRef, resumeDataWithMetadata);
-
             setSaveStatus('success');
-            setTimeout(() => setSaveStatus(''), 3000); // Clear status after 3 seconds
+            setTimeout(() => setSaveStatus(''), 3000);
         } catch (error) {
             console.error('Error saving resume:', error);
             setSaveStatus('error');
@@ -209,19 +188,26 @@ function ResumeForm() {
         }
     };
 
-    // Render save status message
     const renderSaveStatus = () => {
         switch (saveStatus) {
             case 'saving':
-                return <span className='ml-2 text-gray-600'>Saving...</span>;
+                return (
+                    <div className='flex items-center text-[#CDC1FF]'>
+                        <FontAwesomeIcon
+                            icon={faSpinner}
+                            className='animate-spin mr-2'
+                        />
+                        <span>Saving...</span>
+                    </div>
+                );
             case 'success':
                 return (
-                    <span className='ml-2 text-green-600'>
+                    <span className='text-green-500'>
                         Resume saved successfully!
                     </span>
                 );
             case 'error':
-                return <span className='ml-2 text-red-600'>{error}</span>;
+                return <span className='text-red-500'>{error}</span>;
             default:
                 return null;
         }
@@ -231,18 +217,20 @@ function ResumeForm() {
         switch (currentStep) {
             case 0:
                 return (
-                    <div className='space-y-2'>
-                        <label className='block text-sm font-medium text-gray-900'>
-                            Profile Photo:{' '}
+                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                        <label className='block text-gray-700 font-medium mb-4'>
+                            Profile Photo:
                         </label>
                         <ProfilePhotoUpload setProfilePhoto={setProfilePhoto} />
                         {resumeData.profilePhoto && (
-                            <div>
-                                <h4>Profile Photo:</h4>
+                            <div className='mt-4'>
+                                <h4 className='text-gray-700 mb-2'>
+                                    Current Photo:
+                                </h4>
                                 <img
                                     src={resumeData.profilePhoto}
                                     alt='Profile'
-                                    className='rounded-full w-32 h-32 object-cover'
+                                    className='rounded-full w-32 h-32 object-cover border-4 border-[#CDC1FF]/20'
                                 />
                             </div>
                         )}
@@ -250,61 +238,147 @@ function ResumeForm() {
                 );
             case 1:
                 return (
-                    <PersonalDetails
-                        personalDetail={resumeData.personalDetail}
-                        handleInputChange={handleInputChange}
-                    />
+                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                        <PersonalDetails
+                            personalDetail={resumeData.personalDetail}
+                            handleInputChange={handleInputChange}
+                        />
+                    </div>
                 );
             case 2:
                 return (
-                    <Summary
-                        summary={resumeData.summary}
-                        setResumeData={setResumeData}
-                    />
+                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                        <Summary
+                            summary={resumeData.summary}
+                            setResumeData={setResumeData}
+                        />
+                    </div>
                 );
             case 3:
                 return (
-                    <Experience
-                        experience={resumeData.experience}
-                        handleArrayChange={handleArrayChange}
-                        addEntry={addEntry}
-                        removeEntry={removeEntry}
-                    />
+                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                        <Experience
+                            experience={resumeData.experience}
+                            handleArrayChange={handleArrayChange}
+                            addEntry={addEntry}
+                            removeEntry={removeEntry}
+                        />
+                    </div>
                 );
             case 4:
                 return (
-                    <Education
-                        educationDetail={resumeData.educationDetail}
-                        handleArrayChange={handleArrayChange}
-                        addEntry={addEntry}
-                        removeEntry={removeEntry}
-                    />
+                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                        <Education
+                            educationDetail={resumeData.educationDetail}
+                            handleArrayChange={handleArrayChange}
+                            addEntry={addEntry}
+                            removeEntry={removeEntry}
+                        />
+                    </div>
                 );
             case 5:
                 return (
-                    <Skills
-                        skills={resumeData.skills}
-                        setResumeData={setResumeData}
-                    />
+                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                        <Skills
+                            skills={resumeData.skills}
+                            setResumeData={setResumeData}
+                        />
+                    </div>
                 );
             default:
                 return null;
         }
     };
 
+    const sections = [
+        {name: 'Photo Upload', step: 0},
+        {name: 'Personal Details', step: 1},
+        {name: 'Summary', step: 2},
+        {name: 'Experience', step: 3},
+        {name: 'Education', step: 4},
+        {name: 'Skills', step: 5},
+    ];
+
+    const navigateToStep = (step) => {
+        setCurrentStep(step);
+    };
+
     return (
-        <div className='bg-white shadow-md rounded-md p-6 font-sans'>
-            <h1 className='text-xl font-bold mb-4'>Resume Builder</h1>
+        <div className='max-w-4xl mx-auto p-6'>
+            {/* Header */}
+            <div className='text-center mb-10'>
+                <div className='relative'>
+                    <div className='absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-[#CDC1FF] via-[#BFECFF] to-[#FFCCEA]'></div>
+                    <h1 className='relative text-3xl font-bold text-gray-800 mb-2'>
+                        Build Your{' '}
+                        <span className='bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] bg-clip-text text-transparent'>
+                            Resume
+                        </span>
+                    </h1>
+                </div>
+            </div>
+
+            {/* Step Progress */}
+            <div className='flex justify-center mb-8'>
+                <div className='flex space-x-2'>
+                    {[0, 1, 2, 3, 4, 5].map((step) => (
+                        <div
+                            key={step}
+                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                                step === currentStep
+                                    ? 'bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] transform scale-125'
+                                    : step < currentStep
+                                    ? 'bg-[#CDC1FF]/50'
+                                    : 'bg-gray-200'
+                            }`}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* Section Navigation Bar */}
+            <div className='overflow-x-auto mb-8'>
+                <div className='flex justify-start space-x-2 pb-4'>
+                    {sections.map((section) => (
+                        <button
+                            key={section.step}
+                            onClick={() => navigateToStep(section.step)}
+                            className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300
+                                ${
+                                    currentStep === section.step
+                                        ? 'bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-white shadow-lg'
+                                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-[#CDC1FF]/20'
+                                }
+                                ${
+                                    currentStep > section.step
+                                        ? 'hover:from-[#BFECFF] hover:to-[#FFCCEA]'
+                                        : ''
+                                }
+                            `}
+                        >
+                            <span className='mr-2'>{section.step + 1}.</span>
+                            {section.name}
+                            {currentStep > section.step && (
+                                <span className='ml-2 text-green-500'>✓</span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {renderStepContent()}
 
-            <div className='flex justify-between mt-6'>
+            <div className='flex justify-between mt-8'>
                 {currentStep > 0 && (
                     <button
                         type='button'
                         onClick={handlePrevious}
-                        className='py-2 px-4 bg-gray-500 text-white rounded-md'
+                        className='group bg-white text-gray-700 px-6 py-3 rounded-full hover:bg-gray-50 border border-[#CDC1FF]/20 transition-all duration-300 flex items-center'
                     >
+                        <FontAwesomeIcon
+                            icon={faArrowLeft}
+                            className='mr-2 transform group-hover:-translate-x-1 transition-transform duration-300'
+                        />
                         Previous
                     </button>
                 )}
@@ -313,26 +387,32 @@ function ResumeForm() {
                     <button
                         type='button'
                         onClick={handleNext}
-                        className='py-2 px-4 bg-blue-600 text-white rounded-md'
+                        className='group bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center ml-auto'
                     >
                         Next
+                        <FontAwesomeIcon
+                            icon={faArrowRight}
+                            className='ml-2 transform group-hover:translate-x-1 transition-transform duration-300'
+                        />
                     </button>
                 ) : (
-                    <div className='flex items-center space-x-2'>
-                        <form onSubmit={handleSubmit} className='space-y-6'>
+                    <div className='ml-auto'>
+                        <form onSubmit={handleSubmit}>
                             <button
                                 type='submit'
-                                className={`px-4 py-2 rounded-md ${
-                                    isUploading
-                                        ? 'bg-gray-400'
-                                        : 'bg-indigo-600 text-white'
-                                }`}
                                 disabled={isUploading}
+                                className={`group bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-white px-8 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center ${
+                                    isUploading
+                                        ? 'opacity-50 cursor-not-allowed'
+                                        : ''
+                                }`}
                             >
-                                {isUploading ? 'Uploading...' : 'Save Resume'}
+                                {isUploading ? 'Saving...' : 'Save Resume'}
                             </button>
                         </form>
-                        {renderSaveStatus()}
+                        <div className='mt-2 text-center'>
+                            {renderSaveStatus()}
+                        </div>
                     </div>
                 )}
             </div>
