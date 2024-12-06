@@ -19,9 +19,10 @@ import Experience from './section/ExperienceForm';
 import Education from './section/EducationForm';
 import Skills from './section/Skills';
 
-function ResumeForm() {
-    const {templateId, resumeId} = useParams();
+function ResumeForm({templateId, resumeId, initialData, onUpdate}) {
+    // Add onUpdate prop
     const [saveStatus, setSaveStatus] = useState('');
+    const [newSkill, setNewSkill] = useState('');
 
     const [resumeData, setResumeData] = useState({
         profilePhoto: null,
@@ -58,6 +59,13 @@ function ResumeForm() {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Update initial data when provided
+    useEffect(() => {
+        if (initialData) {
+            setResumeData((prevData) => ({...prevData, ...initialData}));
+        }
+    }, [initialData]);
+
     useEffect(() => {
         const fetchResumeData = async () => {
             const user = projectAuth.currentUser;
@@ -67,18 +75,16 @@ function ResumeForm() {
                 const docRef = doc(
                     db,
                     'resumes',
-                    templateId,
-                    'userEmail',
-                    user.email,
+                    resumeId, // Changed from templateId to resumeId
                 );
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    setResumeData((prev) => ({...prev, ...docSnap.data()}));
+                    const data = docSnap.data();
+                    setResumeData((prev) => ({...prev, ...data}));
+                    onUpdate && onUpdate(data); // Update preview when data is fetched
                 } else {
-                    console.log(
-                        'No resume data found for the selected template.',
-                    );
+                    console.log('No resume data found.');
                 }
             } catch (err) {
                 console.error('Error fetching resume data:', err);
@@ -87,57 +93,68 @@ function ResumeForm() {
         };
 
         fetchResumeData();
-    }, [templateId]);
+    }, [templateId, resumeId, onUpdate]);
 
     const setProfilePhoto = (url) => {
-        setResumeData((prevData) => ({...prevData, profilePhoto: url}));
+        const updatedData = {
+            ...resumeData,
+            profilePhoto: url,
+        };
+        setResumeData(updatedData);
+        onUpdate && onUpdate(updatedData); // Update preview when photo changes
     };
 
     const handleInputChange = (section, field, value) => {
-        setResumeData((prev) => ({
-            ...prev,
-            [section]: {...prev[section], [field]: value},
-        }));
+        const updatedData = {
+            ...resumeData,
+            [section]: {...resumeData[section], [field]: value},
+        };
+        setResumeData(updatedData);
+        onUpdate && onUpdate(updatedData); // Update preview when input changes
     };
 
     const handleArrayChange = (section, index, field, value) => {
-        setResumeData((prev) => {
-            const updatedArray = [...prev[section]];
-            updatedArray[index] = {...updatedArray[index], [field]: value};
-            return {...prev, [section]: updatedArray};
-        });
+        const updatedArray = [...resumeData[section]];
+        updatedArray[index] = {...updatedArray[index], [field]: value};
+        const updatedData = {...resumeData, [section]: updatedArray};
+        setResumeData(updatedData);
+        onUpdate && onUpdate(updatedData);
     };
 
     const addEntry = (section) => {
-        setResumeData((prevData) => ({
-            ...prevData,
-            [section]: [
-                ...prevData[section],
-                section === 'experience'
-                    ? {
-                          company: '',
-                          position: '',
-                          startDate: '',
-                          endDate: '',
-                          description: '',
-                      }
-                    : {
-                          level: '',
-                          institution: '',
-                          course: '',
-                          result: '',
-                          startDate: '',
-                          endDate: '',
-                      },
-            ],
-        }));
+        const newEntry =
+            section === 'experience'
+                ? {
+                      company: '',
+                      position: '',
+                      startDate: '',
+                      endDate: '',
+                      description: '',
+                  }
+                : {
+                      level: '',
+                      institution: '',
+                      course: '',
+                      result: '',
+                      startDate: '',
+                      endDate: '',
+                  };
+
+        const updatedData = {
+            ...resumeData,
+            [section]: [...resumeData[section], newEntry],
+        };
+        setResumeData(updatedData);
+        onUpdate && onUpdate(updatedData); // Update preview when entry is added
     };
 
     const removeEntry = (section, index) => {
-        setResumeData((prev) => ({
-            ...prev,
-            [section]: prev[section].filter((_, i) => i !== index),
-        }));
+        const updatedData = {
+            ...resumeData,
+            [section]: resumeData[section].filter((_, i) => i !== index),
+        };
+        setResumeData(updatedData);
+        onUpdate && onUpdate(updatedData); // Update preview when entry is removed
     };
 
     const handleNext = () => {
@@ -178,6 +195,7 @@ function ResumeForm() {
 
             await setDoc(docRef, resumeDataWithMetadata);
             setSaveStatus('success');
+            onUpdate(resumeDataWithMetadata); // Call onUpdate with the new data
             setTimeout(() => setSaveStatus(''), 3000);
         } catch (error) {
             console.error('Error saving resume:', error);
@@ -279,10 +297,75 @@ function ResumeForm() {
             case 5:
                 return (
                     <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
-                        <Skills
-                            skills={resumeData.skills}
-                            setResumeData={setResumeData}
-                        />
+                        <div
+                            id='skill'
+                            className='border-b border-gray-300 pb-6'
+                        >
+                            <h3 className='text-sm font-medium text-gray-900 mb-4'>
+                                Skills
+                            </h3>
+
+                            {/* Display existing skills */}
+                            <div className='mb-4 flex flex-wrap gap-2'>
+                                {resumeData.skills.map((skill, index) => (
+                                    <div
+                                        key={index}
+                                        className='bg-[#CDC1FF]/10 px-3 py-1 rounded-full flex items-center gap-2'
+                                    >
+                                        <span>{skill}</span>
+                                        <button
+                                            onClick={() => {
+                                                const updatedSkills =
+                                                    resumeData.skills.filter(
+                                                        (_, i) => i !== index,
+                                                    );
+                                                setResumeData((prev) => ({
+                                                    ...prev,
+                                                    skills: updatedSkills,
+                                                }));
+                                            }}
+                                            className='text-gray-500 hover:text-red-500'
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Add new skill form */}
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if (newSkill.trim()) {
+                                        setResumeData((prev) => ({
+                                            ...prev,
+                                            skills: [
+                                                ...prev.skills,
+                                                newSkill.trim(),
+                                            ],
+                                        }));
+                                        setNewSkill('');
+                                    }
+                                }}
+                                className='flex gap-2'
+                            >
+                                <input
+                                    type='text'
+                                    value={newSkill}
+                                    onChange={(e) =>
+                                        setNewSkill(e.target.value)
+                                    }
+                                    placeholder="Add a skill (e.g., 'JavaScript', 'Project Management')"
+                                    className='block flex-1 px-4 py-2 border rounded-md text-sm text-gray-900 focus:ring-2 focus:ring-[#CDC1FF]'
+                                />
+                                <button
+                                    type='submit'
+                                    className='px-4 py-2 bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-white rounded-md hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300'
+                                >
+                                    Add
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 );
             default:

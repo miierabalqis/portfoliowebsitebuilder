@@ -21,6 +21,7 @@ function Form() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [resumeData, setResumeData] = useState(null);
+    const [previewData, setPreviewData] = useState(null);
 
     useEffect(() => {
         const auth = getAuth();
@@ -57,6 +58,7 @@ function Form() {
                 }
 
                 setResumeData(resumeData);
+                setPreviewData(resumeData); // Set initial preview data
                 setIsLoading(false);
             } catch (error) {
                 console.error('Error fetching resume:', error);
@@ -67,6 +69,11 @@ function Form() {
 
         validateAndFetchResume();
     }, [templateId, resumeId, navigate]);
+
+    // Add function to update preview data
+    const handleResumeUpdate = (updatedData) => {
+        setPreviewData(updatedData);
+    };
 
     if (isLoading) {
         return (
@@ -148,6 +155,7 @@ function Form() {
                                 templateId={templateId}
                                 resumeId={resumeId}
                                 initialData={resumeData}
+                                onUpdate={handleResumeUpdate}
                             />
                         </div>
                     </div>
@@ -161,7 +169,7 @@ function Form() {
                         </h3>
                     </div>
                     <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
-                        <InpTemp resumeData={resumeData} />
+                        <InpTemp resumeData={previewData} />
                         {templateId === 'template_1' && <InpTemp />}
                         {/* Add conditions for other templates */}
                     </div>

@@ -11,12 +11,11 @@ import Dashboard from './pages/dashboard/Dashboard';
 import Profile from './pages/profile/Profile';
 import EditResume from './pages/resume/edit/ResumeForm';
 import Form from './pages/form/Form';
-import TempAmit from './pages/resume/template/TempAmit';
-import Template from './pages/resume/template/template_1/template';
 import InpTemp from './pages/resume/template/template_1/InpTemp';
 import DashboardForm from './pages/dashboard/DashboardForm';
 import DashboardResumeForm from './pages/dashboard/DashboardResumeForm';
 import Landing from './pages/landing/Landing';
+import Preview from './pages/resume/edit/preview/Preview';
 // import DisplayTemplate from './pages/resume/teplate/displayTemplate';
 
 function App() {
@@ -60,6 +59,12 @@ function App() {
                             }
                         />
                         <Route
+                            path='/preview/:templateId/:resumeId'
+                            element={
+                                user ? <Preview /> : <Navigate to='/login' />
+                            }
+                        />
+                        <Route
                             path='/dashboardform/:templateId/:resumeId'
                             element={
                                 user ? (
@@ -86,12 +91,7 @@ function App() {
                                 user ? <Profile /> : <Navigate to='/login' />
                             }
                         />
-                        <Route
-                            path='/template'
-                            element={
-                                user ? <Template /> : <Navigate to='/login' />
-                            }
-                        />
+
                         <Route
                             path='/form/:templateId/:resumeId'
                             element={user ? <Form /> : <Navigate to='/login' />}
@@ -112,10 +112,6 @@ function App() {
                             element={
                                 user ? <InpTemp /> : <Navigate to='/login' />
                             }
-                        />
-                        <Route
-                            path='/templates/tempamit'
-                            element={<TempAmit />}
                         />
                     </Routes>
                 </BrowserRouter>

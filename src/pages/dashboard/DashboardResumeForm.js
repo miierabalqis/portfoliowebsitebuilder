@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback, memo} from 'react';
+import React, {useEffect, useState, useCallback, memo, useRef} from 'react';
 import {doc, updateDoc} from 'firebase/firestore';
 import {useNavigate} from 'react-router-dom';
 import {fetchUserResumesWithTemplatesForm} from '../../firebase/helpers';
@@ -22,51 +22,43 @@ const MemoizedInput = memo(
         type = 'text',
         value,
         onChange,
-        readOnly,
+        disabled,
         className = '',
         field,
-        onBlur,
+        inputRef, // Add inputRef prop
     }) => (
         <input
+            ref={inputRef} // Use the ref
             type={type}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={onBlur}
-            readOnly={readOnly}
+            disabled={disabled}
             className={`w-full px-4 py-2 rounded-lg border border-[#CDC1FF]/20 focus:ring-2 focus:ring-[#CDC1FF]/50 focus:border-transparent ${
-                readOnly ? 'bg-gray-50' : 'bg-white'
+                disabled ? 'bg-gray-50' : 'bg-white'
             } transition-all duration-300 ${className}`}
         />
     ),
-    (prevProps, nextProps) => {
-        return (
-            prevProps.value === nextProps.value &&
-            prevProps.readOnly === nextProps.readOnly &&
-            prevProps.className === nextProps.className
-        );
-    },
 );
 
-// Optimized TextArea component with proper memoization
 const MemoizedTextArea = memo(
-    ({value, onChange, readOnly, rows = 5, onBlur}) => (
+    ({
+        value,
+        onChange,
+        disabled,
+        rows = 5,
+        textareaRef, // Add textareaRef prop
+    }) => (
         <textarea
+            ref={textareaRef} // Use the ref
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={onBlur}
-            readOnly={readOnly}
+            disabled={disabled}
             rows={rows}
             className={`w-full px-4 py-2 rounded-lg border border-[#CDC1FF]/20 focus:ring-2 focus:ring-[#CDC1FF]/50 focus:border-transparent ${
-                readOnly ? 'bg-gray-50' : 'bg-white'
+                disabled ? 'bg-gray-50' : 'bg-white'
             } transition-all duration-300`}
         />
     ),
-    (prevProps, nextProps) => {
-        return (
-            prevProps.value === nextProps.value &&
-            prevProps.readOnly === nextProps.readOnly
-        );
-    },
 );
 
 const DashboardResumeForm = ({initialResumeData}) => {
@@ -83,6 +75,27 @@ const DashboardResumeForm = ({initialResumeData}) => {
 
     const auth = getAuth();
     const user = auth.currentUser;
+
+    const inputRefs = useRef({});
+    const textareaRefs = useRef({});
+
+    // Function to maintain focus after state changes
+    const maintainFocus = useCallback(() => {
+        const activeElement = document.activeElement;
+        if (activeElement) {
+            const fieldId = activeElement.dataset.fieldId;
+            if (fieldId) {
+                setTimeout(() => {
+                    const element =
+                        inputRefs.current[fieldId] ||
+                        textareaRefs.current[fieldId];
+                    if (element) {
+                        element.focus();
+                    }
+                }, 0);
+            }
+        }
+    }, []);
 
     // Keep all existing useEffect hooks and helper functions exactly as they are
     useEffect(() => {
@@ -137,43 +150,48 @@ const DashboardResumeForm = ({initialResumeData}) => {
         setIsEditing(false);
     }, []);
 
-    const handleInputChange = useCallback((section, value, index, field) => {
-        setEditableData((prev) => {
-            const newData = {...prev};
-
-            if (section === 'skills') {
-                const skills = [
-                    ...(Array.isArray(prev.skills) ? prev.skills : []),
-                ];
-                if (typeof index === 'number') {
-                    skills[index] = value;
+    const handleInputChange = useCallback(
+        (section, value, index, field) => {
+            setEditableData((prev) => {
+                const newData = {...prev};
+                if (section === 'skills') {
+                    const skills = [
+                        ...(Array.isArray(prev.skills) ? prev.skills : []),
+                    ];
+                    if (typeof index === 'number') {
+                        skills[index] = value;
+                    }
+                    newData.skills = skills;
+                } else if (typeof index === 'number' && field) {
+                    if (!Array.isArray(newData[section])) {
+                        newData[section] = [];
+                    }
+                    const sectionArray = [...newData[section]];
+                    if (!sectionArray[index]) {
+                        sectionArray[index] = {};
+                    }
+                    sectionArray[index] = {
+                        ...sectionArray[index],
+                        [field]: value,
+                    };
+                    newData[section] = sectionArray;
+                } else if (field) {
+                    if (!newData[section]) {
+                        newData[section] = {};
+                    }
+                    newData[section] = {
+                        ...newData[section],
+                        [field]: value,
+                    };
+                } else {
+                    newData[section] = value;
                 }
-                newData.skills = skills;
-            } else if (typeof index === 'number' && field) {
-                if (!Array.isArray(newData[section])) {
-                    newData[section] = [];
-                }
-                const sectionArray = [...newData[section]];
-                if (!sectionArray[index]) {
-                    sectionArray[index] = {};
-                }
-                sectionArray[index] = {...sectionArray[index], [field]: value};
-                newData[section] = sectionArray;
-            } else if (field) {
-                if (!newData[section]) {
-                    newData[section] = {};
-                }
-                newData[section] = {
-                    ...newData[section],
-                    [field]: value,
-                };
-            } else {
-                newData[section] = value;
-            }
-
-            return newData;
-        });
-    }, []);
+                return newData;
+            });
+            maintainFocus();
+        },
+        [maintainFocus],
+    );
 
     const handleSaveSection = async () => {
         if (!user || !selectedResume) return;
@@ -601,6 +619,7 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                             )}
                                             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                                                 {[
+                                                    'level',
                                                     'institution',
                                                     'course',
                                                     'startDate',
@@ -637,11 +656,10 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                                             value={
                                                                 edu[field] || ''
                                                             }
-                                                            onChange={(e) =>
+                                                            onChange={(value) =>
                                                                 handleInputChange(
                                                                     'educationDetail',
-                                                                    e.target
-                                                                        .value,
+                                                                    value,
                                                                     index,
                                                                     field,
                                                                 )
@@ -664,6 +682,7 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                             educationDetail: [
                                                 ...(prev.educationDetail || []),
                                                 {
+                                                    level: '',
                                                     institution: '',
                                                     course: '',
                                                     startDate: '',
@@ -835,44 +854,6 @@ const DashboardResumeForm = ({initialResumeData}) => {
                     </div>
                 ) : (
                     <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-                        {/* Resume List Sidebar */}
-                        {/* <div className='lg:col-span-1'>
-                            <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
-                                <h2 className='text-xl font-bold text-gray-800 mb-6'>
-                                    Your Resumes
-                                </h2>
-                                <div className='space-y-2'>
-                                    {resumes.map((resume) => (
-                                        <button
-                                            key={resume.id}
-                                            onClick={() =>
-                                                handleResumeSelect(resume)
-                                            }
-                                            className={`w-full text-left p-4 rounded-lg transition-all duration-300
-                                                ${
-                                                    selectedResume?.id ===
-                                                    resume.id
-                                                        ? 'bg-gradient-to-r from-[#CDC1FF]/20 to-[#BFECFF]/20 shadow-md'
-                                                        : 'hover:bg-gray-50'
-                                                }
-                                            `}
-                                        >
-                                            <h3 className='font-semibold text-gray-800'>
-                                                {resume.templateName ||
-                                                    'Untitled Resume'}
-                                            </h3>
-                                            <p className='text-sm text-gray-500 mt-1'>
-                                                Created:{' '}
-                                                {new Date(
-                                                    resume.createdAt.seconds *
-                                                        1000,
-                                                ).toLocaleDateString()}
-                                            </p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div> */}
                         {/* Main Content Area */}
                         <div className='lg:col-span-3'>
                             {selectedResume ? (
