@@ -10,7 +10,7 @@ import {
     faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import Sidebar from './Sidebar';
-import ResumeForm from '../resume/edit/ResumeForm';
+import ResumeForm from '../resume/edit/form/ResumeForm';
 import InpTemp from '../resume/template/template_1/InpTemp';
 
 function Form() {

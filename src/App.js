@@ -9,7 +9,7 @@ import Signup from './pages/signup/Signup';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/dashboard/Dashboard';
 import Profile from './pages/profile/Profile';
-import EditResume from './pages/resume/edit/ResumeForm';
+import EditResume from './pages/resume/edit/form/ResumeForm';
 import Form from './pages/form/Form';
 import InpTemp from './pages/resume/template/template_1/InpTemp';
 import DashboardForm from './pages/dashboard/DashboardForm';

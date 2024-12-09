@@ -1,10 +1,5 @@
-import React, {useState, useEffect} from 'react';
-import {projectAuth} from '../../../firebase/config';
-import ProfilePhotoUpload from '../../resume/edit/PhotoUpload';
-import {doc, getDoc, setDoc} from 'firebase/firestore';
-import {projectFirestore as db} from '../../../firebase/config';
-import {useParams} from 'react-router-dom';
-import {serverTimestamp} from 'firebase/firestore';
+import React from 'react';
+import ProfilePhotoUpload from '../PhotoUpload';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faArrowRight,
@@ -13,198 +8,33 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 // Import separate section components
-import PersonalDetails from './section/PersonalDetails';
-import Summary from './section/SummaryForm';
-import Experience from './section/ExperienceForm';
-import Education from './section/EducationForm';
-import Skills from './section/Skills';
+import PersonalDetails from '../section/PersonalDetails';
+import Summary from '../section/SummaryForm';
+import Experience from '../section/ExperienceForm';
+import Education from '../section/EducationForm';
+import {useResumeForm} from './hooks/useResumeForm';
 
 function ResumeForm({templateId, resumeId, initialData, onUpdate}) {
-    // Add onUpdate prop
-    const [saveStatus, setSaveStatus] = useState('');
-    const [newSkill, setNewSkill] = useState('');
-
-    const [resumeData, setResumeData] = useState({
-        profilePhoto: null,
-        personalDetail: {
-            name: '',
-            email: '',
-            phone: '',
-            address: '',
-        },
-        summary: '',
-        experience: [
-            {
-                company: '',
-                position: '',
-                startDate: '',
-                endDate: '',
-                description: '',
-            },
-        ],
-        educationDetail: [
-            {
-                level: '',
-                institution: '',
-                course: '',
-                result: '',
-                startDate: '',
-                endDate: '',
-            },
-        ],
-        skills: [],
-    });
-
-    const [currentStep, setCurrentStep] = useState(0);
-    const [isUploading, setIsUploading] = useState(false);
-    const [error, setError] = useState(null);
-
-    // Update initial data when provided
-    useEffect(() => {
-        if (initialData) {
-            setResumeData((prevData) => ({...prevData, ...initialData}));
-        }
-    }, [initialData]);
-
-    useEffect(() => {
-        const fetchResumeData = async () => {
-            const user = projectAuth.currentUser;
-            if (!user || !templateId) return;
-
-            try {
-                const docRef = doc(
-                    db,
-                    'resumes',
-                    resumeId, // Changed from templateId to resumeId
-                );
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setResumeData((prev) => ({...prev, ...data}));
-                    onUpdate && onUpdate(data); // Update preview when data is fetched
-                } else {
-                    console.log('No resume data found.');
-                }
-            } catch (err) {
-                console.error('Error fetching resume data:', err);
-                setError('Failed to fetch resume data.');
-            }
-        };
-
-        fetchResumeData();
-    }, [templateId, resumeId, onUpdate]);
-
-    const setProfilePhoto = (url) => {
-        const updatedData = {
-            ...resumeData,
-            profilePhoto: url,
-        };
-        setResumeData(updatedData);
-        onUpdate && onUpdate(updatedData); // Update preview when photo changes
-    };
-
-    const handleInputChange = (section, field, value) => {
-        const updatedData = {
-            ...resumeData,
-            [section]: {...resumeData[section], [field]: value},
-        };
-        setResumeData(updatedData);
-        onUpdate && onUpdate(updatedData); // Update preview when input changes
-    };
-
-    const handleArrayChange = (section, index, field, value) => {
-        const updatedArray = [...resumeData[section]];
-        updatedArray[index] = {...updatedArray[index], [field]: value};
-        const updatedData = {...resumeData, [section]: updatedArray};
-        setResumeData(updatedData);
-        onUpdate && onUpdate(updatedData);
-    };
-
-    const addEntry = (section) => {
-        const newEntry =
-            section === 'experience'
-                ? {
-                      company: '',
-                      position: '',
-                      startDate: '',
-                      endDate: '',
-                      description: '',
-                  }
-                : {
-                      level: '',
-                      institution: '',
-                      course: '',
-                      result: '',
-                      startDate: '',
-                      endDate: '',
-                  };
-
-        const updatedData = {
-            ...resumeData,
-            [section]: [...resumeData[section], newEntry],
-        };
-        setResumeData(updatedData);
-        onUpdate && onUpdate(updatedData); // Update preview when entry is added
-    };
-
-    const removeEntry = (section, index) => {
-        const updatedData = {
-            ...resumeData,
-            [section]: resumeData[section].filter((_, i) => i !== index),
-        };
-        setResumeData(updatedData);
-        onUpdate && onUpdate(updatedData); // Update preview when entry is removed
-    };
-
-    const handleNext = () => {
-        if (currentStep < 5) {
-            setCurrentStep((prevStep) => prevStep + 1);
-        }
-    };
-
-    const handlePrevious = () => {
-        if (currentStep > 0) {
-            setCurrentStep((prevStep) => prevStep - 1);
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const user = projectAuth.currentUser;
-
-        if (!user || !templateId || !resumeId) {
-            setSaveStatus('error');
-            setError('User not logged in or no template selected.');
-            return;
-        }
-
-        setIsUploading(true);
-        setSaveStatus('saving');
-
-        try {
-            const docRef = doc(db, 'resumes', resumeId);
-            const resumeDataWithMetadata = {
-                ...resumeData,
-                userId: user.uid,
-                userEmail: user.email,
-                templateId: templateId,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-            };
-
-            await setDoc(docRef, resumeDataWithMetadata);
-            setSaveStatus('success');
-            onUpdate(resumeDataWithMetadata); // Call onUpdate with the new data
-            setTimeout(() => setSaveStatus(''), 3000);
-        } catch (error) {
-            console.error('Error saving resume:', error);
-            setSaveStatus('error');
-            setError('Failed to save resume.');
-        } finally {
-            setIsUploading(false);
-        }
-    };
+    const {
+        resumeData,
+        currentStep,
+        isUploading,
+        saveStatus,
+        error,
+        newSkill,
+        setNewSkill,
+        setProfilePhoto,
+        handleInputChange,
+        handleArrayChange,
+        addEntry,
+        removeEntry,
+        handleNext,
+        handlePrevious,
+        handleSubmit,
+        addSkill,
+        removeSkill,
+        setCurrentStep,
+    } = useResumeForm({templateId, resumeId, initialData, onUpdate});
 
     const renderSaveStatus = () => {
         switch (saveStatus) {
@@ -268,7 +98,9 @@ function ResumeForm({templateId, resumeId, initialData, onUpdate}) {
                     <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
                         <Summary
                             summary={resumeData.summary}
-                            setResumeData={setResumeData}
+                            onChange={(value) =>
+                                handleInputChange('summary', 'summary', value)
+                            }
                         />
                     </div>
                 );
@@ -305,7 +137,6 @@ function ResumeForm({templateId, resumeId, initialData, onUpdate}) {
                                 Skills
                             </h3>
 
-                            {/* Display existing skills */}
                             <div className='mb-4 flex flex-wrap gap-2'>
                                 {resumeData.skills.map((skill, index) => (
                                     <div
@@ -314,16 +145,7 @@ function ResumeForm({templateId, resumeId, initialData, onUpdate}) {
                                     >
                                         <span>{skill}</span>
                                         <button
-                                            onClick={() => {
-                                                const updatedSkills =
-                                                    resumeData.skills.filter(
-                                                        (_, i) => i !== index,
-                                                    );
-                                                setResumeData((prev) => ({
-                                                    ...prev,
-                                                    skills: updatedSkills,
-                                                }));
-                                            }}
+                                            onClick={() => removeSkill(index)}
                                             className='text-gray-500 hover:text-red-500'
                                         >
                                             ×
@@ -332,20 +154,10 @@ function ResumeForm({templateId, resumeId, initialData, onUpdate}) {
                                 ))}
                             </div>
 
-                            {/* Add new skill form */}
                             <form
                                 onSubmit={(e) => {
                                     e.preventDefault();
-                                    if (newSkill.trim()) {
-                                        setResumeData((prev) => ({
-                                            ...prev,
-                                            skills: [
-                                                ...prev.skills,
-                                                newSkill.trim(),
-                                            ],
-                                        }));
-                                        setNewSkill('');
-                                    }
+                                    addSkill(newSkill);
                                 }}
                                 className='flex gap-2'
                             >
