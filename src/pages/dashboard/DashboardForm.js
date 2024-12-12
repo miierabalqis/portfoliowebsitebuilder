@@ -10,8 +10,11 @@ import {
     faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import InpTemp from '../resume/template/template_1/InpTemp';
-import DashboardResumeForm from './DashboardResumeForm';
+import InpOzidom from '../resume/template/template_2/InpOzidom';
+// import DashboardResumeForm from './DashboardResumeForm';
 import {downloadResumePDF} from '../resume/edit/download/Download';
+// import UnifiedResumeForm from '../resume/edit/form/UnifiedResumeForm';
+import DashboardResumeForm from './DashboardResumeForm';
 
 const DashboardForm = () => {
     const navigate = useNavigate();
@@ -145,9 +148,9 @@ const DashboardForm = () => {
     };
 
     return (
-        <div className='flex min-h-screen bg-[#FBFBFB]'>
+        <div className='flex min-h-screen bg-[#FBFBFB] '>
             {/* Main Content Section */}
-            <div className='flex-1 px-8'>
+            <div className='flex-1 px-5 pt-16'>
                 {/* Form Section with gradient background */}
                 <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
                     <DashboardResumeForm
@@ -158,15 +161,18 @@ const DashboardForm = () => {
             </div>
 
             {/* Preview Section */}
-            <div className='flex-1 bg-gray-50 p-6 border-l border-[#CDC1FF]/10'>
+            <div className='flex-1 bg-gray-50  border-1 border-[#CDC1FF]/10 pt-16'>
                 <div className='sticky top-6'>
                     <div
-                        ref={resumePreviewRef} // Attach the ref here
+                        ref={resumePreviewRef}
                         className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'
                     >
                         {/* {resumeData ? <InpTemp data={previewData} /> : null} */}
-                        <InpTemp resumeData={previewData} />
-                        {templateId === 'template_1' && <InpTemp />}
+                        {templateId === 'template1' ? (
+                            <InpTemp resumeData={previewData} />
+                        ) : templateId === 'template2' ? (
+                            <InpOzidom resumeData={previewData} />
+                        ) : null}
                     </div>
                 </div>
             </div>

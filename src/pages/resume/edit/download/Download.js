@@ -1,149 +1,72 @@
-import {doc, getDoc} from 'firebase/firestore';
-import {projectFirestore} from '../../../../firebase/config';
-import {getAuth} from 'firebase/auth';
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 /**
- * Downloads a resume as a PDF
- * @param {Object} params - Parameters for resume download
- * @param {Object} params.resume - Resume object containing ID
- * @param {React.RefObject} params.resumeRef - React ref to the resume template DOM element
- * @returns {Promise<{success: boolean, error?: string}>} Download result
+ * Function to download the resume preview as a PDF with images included.
+ * @param {Object} params - Parameters containing the resume reference.
+ * @param {Object} params.resumeRef - A React ref or DOM element containing the resume content.
+ * @returns {Promise<Object>} - Result object indicating success or failure.
  */
-export const downloadResumePDF = async ({resume, resumeRef}) => {
+export const downloadResumePDF = async ({resumeRef}) => {
+    if (!resumeRef?.current) {
+        return {success: false, error: 'Resume preview container not found'};
+    }
+
     try {
-        console.log('Download function called with:', {resume, resumeRef});
+        const container = resumeRef.current;
 
-        // Validate inputs
-        if (!resume) {
-            console.error('No resume data provided');
-            return {success: false, error: 'No resume data available'};
-        }
+        // Ensuring all images are loaded before capturing
+        const allImages = Array.from(container.querySelectorAll('img'));
+        await Promise.all(
+            allImages.map((img) => {
+                return new Promise((resolve, reject) => {
+                    if (img.complete) {
+                        resolve();
+                    } else {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                    }
+                });
+            }),
+        );
 
-        if (!resumeRef || !resumeRef.current) {
-            console.error('Invalid or missing resume ref');
-            return {success: false, error: 'Unable to capture resume preview'};
-        }
-
-        // Store original styles
-        const element = resumeRef.current;
-        const originalStyles = {
-            position: element.style.position,
-            visibility: element.style.visibility,
-            display: element.style.display,
-            zIndex: element.style.zIndex,
-        };
-
-        // Make element visible for capture
-        element.style.position = 'fixed';
-        element.style.top = '0';
-        element.style.left = '0';
-        element.style.visibility = 'visible';
-        element.style.display = 'block';
-        element.style.zIndex = '-9999';
-        element.style.backgroundColor = 'white';
-
-        // Wait a moment for styles to apply
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Attempt to capture the element
-        const canvas = await html2canvas(element, {
-            scale: 3, // Higher scale for better quality
-            useCORS: true,
-            logging: true,
-            backgroundColor: '#ffffff',
-            allowTaint: true,
-            scrollX: 0,
-            scrollY: -window.scrollY,
-            windowWidth: 794, // Standard A4 width in pixels
-            windowHeight: 1123, // Standard A4 height in pixels
-            foreignObjectRendering: true,
+        // Capture the container as an image using html2canvas
+        const canvas = await html2canvas(container, {
+            scale: 2, // Ensures high resolution
+            useCORS: true, // Enables capturing of images hosted externally
+            allowTaint: false, // Prevents cross-origin issues
         });
 
-        // Restore original styles
-        Object.assign(element.style, originalStyles);
-
-        // Create PDF
-        const pdf = new jsPDF('p', 'mm', 'a4');
         const imgData = canvas.toDataURL('image/png');
 
-        // // Get A4 dimensions
-        // const pageWidth = 210;
-        // const pageHeight = 297;
+        // Create a new PDF instance
+        const pdf = new jsPDF('portrait', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        // // Calculate image dimensions to fit the page
-        // const imageAspectRatio = canvas.width / canvas.height;
-        // let imgWidth = pageWidth;
-        // let imgHeight = pageWidth / imageAspectRatio;
+        // Calculate dimensions to fit the image inside the PDF
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const aspectRatio = canvasWidth / canvasHeight;
 
-        // // Adjust if image is too tall
-        // if (imgHeight > pageHeight) {
-        //     imgHeight = pageHeight;
-        //     imgWidth = pageHeight * imageAspectRatio;
-        // }
+        const pdfAspectHeight = pdfWidth / aspectRatio;
+        const finalHeight =
+            pdfAspectHeight > pdfHeight ? pdfHeight : pdfAspectHeight;
+        const finalWidth = finalHeight * aspectRatio;
 
-        // Calculate dimensions more precisely
-        const pageWidth = 210;
-        const pageHeight = 297;
-        const imageAspectRatio = canvas.width / canvas.height;
+        const offsetX = (pdfWidth - finalWidth) / 2;
+        const offsetY = (pdfHeight - finalHeight) / 2;
 
-        let imgWidth, imgHeight;
-        if (canvas.height / canvas.width > pageHeight / pageWidth) {
-            // Image is taller relative to A4
-            imgHeight = pageHeight;
-            imgWidth = pageHeight * (canvas.width / canvas.height);
-        } else {
-            // Image is wider relative to A4
-            imgWidth = pageWidth;
-            imgHeight = pageWidth * (canvas.height / canvas.width);
-        }
+        // Add the image to the PDF
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
 
-        // Center the image
-        const xPadding = 0; // Start from the left edge
-        const yPadding = 0; // Start from the top edge
+        // Generate a file name and trigger the download
+        const fileName = `Resume_${new Date().toISOString().split('T')[0]}.pdf`;
+        pdf.save(fileName);
 
-        try {
-            pdf.addImage(
-                imgData,
-                'PNG',
-                xPadding,
-                yPadding,
-                imgWidth,
-                imgHeight,
-            );
-
-            // Save the PDF
-            pdf.save(
-                `${resume.templateName || 'resume'}_${
-                    new Date().toISOString().split('T')[0]
-                }.pdf`,
-            );
-
-            return {success: true};
-        } catch (imageError) {
-            console.error('Error adding image to PDF:', imageError);
-            return {
-                success: false,
-                error: 'Failed to add image to PDF',
-                details: {
-                    imageData: imgData
-                        ? imgData.substring(0, 100) + '...'
-                        : 'No image data',
-                    canvasWidth: canvas.width,
-                    canvasHeight: canvas.height,
-                    imgWidth,
-                    imgHeight,
-                },
-            };
-        }
+        return {success: true};
     } catch (error) {
-        console.error('Error in downloadResumePDF:', error);
-        return {
-            success: false,
-            error:
-                error.message ||
-                'An unexpected error occurred during PDF generation',
-        };
+        console.error('Error capturing or downloading the PDF:', error);
+        return {success: false, error: 'Failed to create PDF'};
     }
 };

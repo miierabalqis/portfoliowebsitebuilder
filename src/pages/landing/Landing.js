@@ -7,6 +7,11 @@ import {
     faArrowRight,
 } from '@fortawesome/free-solid-svg-icons';
 
+// At the top of your file, import the template images
+import ModernTemplateImage from '../../assets/landing/modern template image.png';
+import CreativeTemplateImage from '../../assets/landing/creative template image.png';
+import MinimalistTemplateImage from '../../assets/landing/simple template image.jpg';
+
 const App = () => {
     return (
         <div className='min-h-screen bg-[#FBFBFB]'>
@@ -108,30 +113,41 @@ const ResumeTemplates = () => (
             Resume Templates
         </h3>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
-            {['Modern', 'Creative', 'Minimalist'].map((template, index) => (
+            {[
+                {
+                    title: 'Modern Template',
+                    description: 'A clean, professional resume template.',
+                    image: ModernTemplateImage,
+                },
+                {
+                    title: 'Creative Template',
+                    description: 'A vibrant, unique resume template.',
+                    image: CreativeTemplateImage,
+                },
+                {
+                    title: 'Minimalist Template',
+                    description: 'A simple, minimalist resume template.',
+                    image: MinimalistTemplateImage,
+                },
+            ].map((template, index) => (
                 <TemplateCard
                     key={index}
-                    title={`${template} Template`}
-                    description={`A ${template.toLowerCase()} resume template with ${
-                        template === 'Modern'
-                            ? 'clean, professional'
-                            : template === 'Creative'
-                            ? 'vibrant, unique'
-                            : 'simple, minimalist'
-                    } design.`}
+                    title={template.title}
+                    description={template.description}
+                    image={template.image}
                 />
             ))}
         </div>
     </section>
 );
 
-const TemplateCard = ({title, description}) => (
+const TemplateCard = ({title, description, image}) => (
     <div className='group p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 relative bg-gradient-to-br from-[#CDC1FF]/30 via-[#BFECFF]/30 to-[#FFCCEA]/30 hover:from-[#CDC1FF]/40 hover:via-[#BFECFF]/40 hover:to-[#FFCCEA]/40'>
         <div className='overflow-hidden rounded-lg mb-6'>
             <div className='relative'>
                 <div className='absolute inset-0 bg-gradient-to-br from-[#CDC1FF]/20 via-[#BFECFF]/20 to-[#FFCCEA]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500'></div>
                 <img
-                    src='/api/placeholder/300/200'
+                    src={image}
                     alt={`${title} Example`}
                     className='w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-500'
                 />

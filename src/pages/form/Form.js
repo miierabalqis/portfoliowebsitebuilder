@@ -12,6 +12,7 @@ import {
 import Sidebar from './Sidebar';
 import ResumeForm from '../resume/edit/form/ResumeForm';
 import InpTemp from '../resume/template/template_1/InpTemp';
+import InpOzidom from '../resume/template/template_2/InpOzidom';
 
 function Form() {
     const navigate = useNavigate();
@@ -144,9 +145,6 @@ function Form() {
                                     </span>
                                 </h2>
                             </div>
-                            <p className='text-gray-600'>
-                                Customize your resume information below
-                            </p>
                         </div>
 
                         {/* Resume Form Component */}
@@ -162,16 +160,15 @@ function Form() {
                 </div>
 
                 {/* Preview Section */}
-                <div className='flex-1 overflow-y-auto bg-gray-50 p-6'>
-                    <div className='sticky top-0 bg-gray-50 pb-4 mb-4 border-b border-[#CDC1FF]/10'>
-                        <h3 className='text-xl font-semibold text-gray-800'>
-                            Preview
-                        </h3>
-                    </div>
-                    <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
-                        <InpTemp resumeData={previewData} />
-                        {templateId === 'template_1' && <InpTemp />}
-                        {/* Add conditions for other templates */}
+                <div className='flex-1 bg-gray-50 p-0 border-l border-[#CDC1FF]/10 pt-16'>
+                    <div className='sticky top-6'>
+                        <div className='bg-white rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#CDC1FF]/20 transition-all duration-300 border border-[#CDC1FF]/10 p-6'>
+                            {templateId === 'template1' ? (
+                                <InpTemp resumeData={previewData} />
+                            ) : templateId === 'template2' ? (
+                                <InpOzidom resumeData={previewData} />
+                            ) : null}
+                        </div>
                     </div>
                 </div>
             </div>

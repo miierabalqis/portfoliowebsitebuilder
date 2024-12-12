@@ -1,6 +1,11 @@
 import React, {useState} from 'react';
-import {projectStorage} from '../../../firebase/config';
-import {ref, uploadBytes, getDownloadURL} from 'firebase/storage';
+import {
+    projectStorage,
+    projectFirestore,
+    projectAuth,
+} from '../../../firebase/config';
+import {ref, uploadBytes, getDownloadURL, deleteObject} from 'firebase/storage';
+import {doc, updateDoc} from 'firebase/firestore';
 
 function ProfilePhotoUpload({setProfilePhoto}) {
     const [file, setFile] = useState(null);
@@ -20,7 +25,7 @@ function ProfilePhotoUpload({setProfilePhoto}) {
         handleUpload(selectedFile);
     };
 
-    // Handle file upload to Firebase Storage
+    // Handle file upload to Firebase Storage and update Firestore
     const handleUpload = async (selectedFile) => {
         const fileToUpload = selectedFile || file;
         if (!fileToUpload) {
@@ -28,22 +33,63 @@ function ProfilePhotoUpload({setProfilePhoto}) {
             return;
         }
 
+        // Get current user
+        const currentUser = projectAuth.currentUser;
+        if (!currentUser) {
+            alert('You must be logged in to update profile photo');
+            return;
+        }
+
         setIsUploading(true);
 
-        const fileName = `${Date.now()}_${fileToUpload.name}`;
-        const storageRef = ref(projectStorage, `profilePhotos/${fileName}`);
-
         try {
-            await uploadBytes(storageRef, fileToUpload);
+            console.log('Starting upload for file:', selectedFile.name);
+
+            // Generate unique filename
+            const fileName = `${currentUser.uid}_${Date.now()}_${
+                fileToUpload.name
+            }`;
+            const storageRef = ref(projectStorage, `profilePhotos/${fileName}`);
+
+            // Add metadata to make the file public
+            const metadata = {
+                contentType: fileToUpload.type,
+                cacheControl: 'public, max-age=31536000',
+            };
+
+            // Upload new file
+            await uploadBytes(storageRef, fileToUpload, metadata);
+
+            // Get download URL of new file
             const downloadURL = await getDownloadURL(storageRef);
+
+            // Add this logging
+            console.log('Generated download URL:', downloadURL);
+
+            // Update Firestore document with new photo URL
+            const userDocRef = doc(projectFirestore, 'users', currentUser.uid);
+            await updateDoc(userDocRef, {
+                profilePhoto: downloadURL,
+            });
+
+            // Update local state
             setProfilePhoto(downloadURL);
-            alert('Profile photo uploaded successfully');
+
+            alert('Profile photo updated successfully');
         } catch (error) {
-            console.error('Error uploading file:', error.message);
+            console.error('Upload error details:', {
+                error,
+                fileName: fileToUpload.name,
+                userId: currentUser.uid,
+            });
             alert(`Failed to upload photo: ${error.message}`);
-        } finally {
-            setIsUploading(false);
         }
+        // } catch (error) {
+        //     console.error('Error uploading file:', error.message);
+        //     alert(`Failed to upload photo: ${error.message}`);
+        // } finally {
+        //     setIsUploading(false);
+        // }
     };
 
     return (
@@ -92,7 +138,7 @@ function ProfilePhotoUpload({setProfilePhoto}) {
                             <path
                                 className='opacity-75'
                                 fill='currentColor'
-                                d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                d='M4 12a8 8 0 018-8V0C5.373 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
                             ></path>
                         </svg>
                         Uploading...

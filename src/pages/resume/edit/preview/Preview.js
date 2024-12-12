@@ -11,6 +11,7 @@ import {
     faDownload,
 } from '@fortawesome/free-solid-svg-icons';
 import InpTemp from '../../template/template_1/InpTemp';
+import InpOzidom from '../../template/template_2/InpOzidom';
 import {downloadResumePDF} from '../../../resume/edit/download/Download';
 
 const Preview = () => {
@@ -72,11 +73,10 @@ const Preview = () => {
         try {
             setDownloadLoading(true);
             const result = await downloadResumePDF({
-                resume: resumeData,
                 resumeRef: {
                     current: document.getElementById(
                         'resume-preview-container',
-                    ), // Assume this is where InpTemp renders
+                    ),
                 },
             });
 
@@ -183,7 +183,12 @@ const Preview = () => {
                     id='resume-preview-container'
                 >
                     <div className='max-w-4xl w-full bg-white rounded-xl shadow-lg p-8'>
-                        <InpTemp resumeData={resumeData} />
+                        {/* <InpTemp resumeData={resumeData} /> */}
+                        {templateId === 'template1' ? (
+                            <InpTemp resumeData={resumeData} />
+                        ) : templateId === 'template2' ? (
+                            <InpOzidom resumeData={resumeData} />
+                        ) : null}
                     </div>
                 </div>
             </div>

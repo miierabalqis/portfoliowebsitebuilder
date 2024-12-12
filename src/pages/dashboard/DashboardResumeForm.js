@@ -1,10 +1,8 @@
-import React, {useEffect, useState, useCallback, memo, useRef} from 'react';
-import {doc, updateDoc} from 'firebase/firestore';
+import React, {useEffect, memo} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {fetchUserResumesWithTemplatesForm} from '../../firebase/helpers';
 import {getAuth, onAuthStateChanged} from 'firebase/auth';
+import {fetchUserResumesWithTemplatesForm} from '../../firebase/helpers';
 import ProfilePhotoUpload from '../../pages/resume/edit/PhotoUpload';
-import {projectFirestore} from '../../firebase/config';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faEdit,
@@ -16,88 +14,37 @@ import {
     faPlus,
     faTrash,
 } from '@fortawesome/free-solid-svg-icons';
-
-const MemoizedInput = memo(
-    ({
-        type = 'text',
-        value,
-        onChange,
-        disabled,
-        className = '',
-        field,
-        inputRef, // Add inputRef prop
-    }) => (
-        <input
-            ref={inputRef} // Use the ref
-            type={type}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled}
-            className={`w-full px-4 py-2 rounded-lg border border-[#CDC1FF]/20 focus:ring-2 focus:ring-[#CDC1FF]/50 focus:border-transparent ${
-                disabled ? 'bg-gray-50' : 'bg-white'
-            } transition-all duration-300 ${className}`}
-        />
-    ),
-);
-
-const MemoizedTextArea = memo(
-    ({
-        value,
-        onChange,
-        disabled,
-        rows = 5,
-        textareaRef, // Add textareaRef prop
-    }) => (
-        <textarea
-            ref={textareaRef} // Use the ref
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled}
-            rows={rows}
-            className={`w-full px-4 py-2 rounded-lg border border-[#CDC1FF]/20 focus:ring-2 focus:ring-[#CDC1FF]/50 focus:border-transparent ${
-                disabled ? 'bg-gray-50' : 'bg-white'
-            } transition-all duration-300`}
-        />
-    ),
-);
+import {useResumeDashboardForm} from './hooks/useResumeDashboardForm';
+import {MemoizedInput} from './memo/MemoizedInput';
+import {MemoizedTextArea} from './memo/MemoizedTextArea';
+import ProfilePhotoSection from '../resume/edit/section/ProfilePhoto';
 
 const DashboardResumeForm = ({initialResumeData}) => {
     const navigate = useNavigate();
-    const [resumes, setResumes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [selectedResume, setSelectedResume] = useState(null);
-    const [currentStep, setCurrentStep] = useState(0);
-    const [editableData, setEditableData] = useState({});
-    const [editableResume, setEditableResume] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const {
+        resumes,
+        setResumes,
+        loading,
+        setLoading,
+        error,
+        setError,
+        selectedResume,
+        currentStep,
+        setCurrentStep,
+        editableData,
+        setEditableData,
+        isEditing,
+        setIsEditing,
+        isSaving,
+        handleResumeSelect,
+        handleInputChange,
+        handleSaveSection,
+        handleNextStep,
+        handlePreviousStep,
+        addArrayItem,
+        removeArrayItem,
+    } = useResumeDashboardForm(initialResumeData);
 
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    const inputRefs = useRef({});
-    const textareaRefs = useRef({});
-
-    // Function to maintain focus after state changes
-    const maintainFocus = useCallback(() => {
-        const activeElement = document.activeElement;
-        if (activeElement) {
-            const fieldId = activeElement.dataset.fieldId;
-            if (fieldId) {
-                setTimeout(() => {
-                    const element =
-                        inputRefs.current[fieldId] ||
-                        textareaRefs.current[fieldId];
-                    if (element) {
-                        element.focus();
-                    }
-                }, 0);
-            }
-        }
-    }, []);
-
-    // Keep all existing useEffect hooks and helper functions exactly as they are
     useEffect(() => {
         const auth = getAuth();
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -131,147 +78,44 @@ const DashboardResumeForm = ({initialResumeData}) => {
         });
 
         return () => unsubscribe();
-    }, [navigate, initialResumeData]);
-
-    // Keep all your existing handler functions (handleResumeSelect, handleInputChange, etc.)
-    const handleResumeSelect = useCallback((resume) => {
-        setSelectedResume(resume);
-        setEditableData({
-            ...resume,
-            skills: Array.isArray(resume.skills) ? resume.skills : [],
-            experience: Array.isArray(resume.experience)
-                ? resume.experience
-                : [],
-            educationDetail: Array.isArray(resume.educationDetail)
-                ? resume.educationDetail
-                : [],
-        });
-        setCurrentStep(0);
-        setIsEditing(false);
-    }, []);
-
-    const handleInputChange = useCallback(
-        (section, value, index, field) => {
-            setEditableData((prev) => {
-                const newData = {...prev};
-                if (section === 'skills') {
-                    const skills = [
-                        ...(Array.isArray(prev.skills) ? prev.skills : []),
-                    ];
-                    if (typeof index === 'number') {
-                        skills[index] = value;
-                    }
-                    newData.skills = skills;
-                } else if (typeof index === 'number' && field) {
-                    if (!Array.isArray(newData[section])) {
-                        newData[section] = [];
-                    }
-                    const sectionArray = [...newData[section]];
-                    if (!sectionArray[index]) {
-                        sectionArray[index] = {};
-                    }
-                    sectionArray[index] = {
-                        ...sectionArray[index],
-                        [field]: value,
-                    };
-                    newData[section] = sectionArray;
-                } else if (field) {
-                    if (!newData[section]) {
-                        newData[section] = {};
-                    }
-                    newData[section] = {
-                        ...newData[section],
-                        [field]: value,
-                    };
-                } else {
-                    newData[section] = value;
-                }
-                return newData;
-            });
-            maintainFocus();
-        },
-        [maintainFocus],
-    );
-
-    const handleSaveSection = async () => {
-        if (!user || !selectedResume) return;
-        setIsSaving(true);
-
-        try {
-            const sectionKeys = [
-                'profilePhoto',
-                'personalDetail',
-                'summary',
-                'experience',
-                'educationDetail',
-                'skills',
-            ];
-            const sectionKey = sectionKeys[currentStep];
-            const resumeRef = doc(
-                projectFirestore,
-                'resumes',
-                selectedResume.id,
-            );
-
-            await updateDoc(resumeRef, {
-                [sectionKey]: editableData[sectionKey] || null,
-            });
-
-            setSelectedResume((prev) => ({
-                ...prev,
-                [sectionKey]: editableData[sectionKey],
-            }));
-
-            setResumes((prev) =>
-                prev.map((resume) =>
-                    resume.id === selectedResume.id
-                        ? {...resume, [sectionKey]: editableData[sectionKey]}
-                        : resume,
-                ),
-            );
-
-            alert('Section updated successfully!');
-            setIsEditing(false);
-        } catch (error) {
-            console.error('Error saving section:', error);
-            alert('Failed to save section. Please try again.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleNextStep = useCallback(() => {
-        if (currentStep < 5) {
-            setCurrentStep((prevStep) => prevStep + 1);
-        }
-    }, [currentStep]);
-
-    const handlePreviousStep = useCallback(() => {
-        if (currentStep > 0) {
-            setCurrentStep((prevStep) => prevStep - 1);
-        }
-    }, [currentStep]);
+    }, [
+        navigate,
+        initialResumeData,
+        handleResumeSelect,
+        setError,
+        setLoading,
+        setResumes,
+    ]);
 
     // Styled input components
     const StyledInput = memo(
-        ({type = 'text', value, onChange, readOnly, className = '', field}) => (
+        ({
+            type = 'text',
+            value,
+            onChange,
+            isEditing,
+            className = '',
+            field,
+        }) => (
             <MemoizedInput
                 type={type}
                 value={value}
-                onChange={(newValue) => onChange(newValue, field)}
-                readOnly={readOnly}
+                onChange={(newValue) => isEditing && onChange(newValue, field)}
+                disabled={!isEditing}
                 className={className}
+                field={field}
             />
         ),
     );
 
     const StyledTextArea = memo(
-        ({value, onChange, readOnly, rows = 5, field}) => (
+        ({value, onChange, isEditing, rows = 5, field}) => (
             <MemoizedTextArea
                 value={value}
-                onChange={(newValue) => onChange(newValue, field)}
-                readOnly={readOnly}
+                onChange={(newValue) => isEditing && onChange(newValue, field)}
+                disabled={!isEditing}
                 rows={rows}
+                field={field}
             />
         ),
     );
@@ -332,11 +176,11 @@ const DashboardResumeForm = ({initialResumeData}) => {
                         {renderEditButton()}
 
                         <div className='flex flex-col items-center space-y-6'>
-                            {editableData.imageUrl ? (
+                            {editableData.profilePhoto ? (
                                 <div className='relative group'>
                                     <div className='w-32 h-32 rounded-full overflow-hidden border-4 border-[#CDC1FF]/20 transition-all duration-300 group-hover:border-[#BFECFF]/40'>
                                         <img
-                                            src={editableData.imageUrl}
+                                            src={editableData.profilePhoto}
                                             alt='Profile'
                                             className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-110'
                                         />
@@ -346,7 +190,7 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                             onClick={() =>
                                                 setEditableData((prev) => ({
                                                     ...prev,
-                                                    imageUrl: null,
+                                                    profilePhoto: null,
                                                 }))
                                             }
                                             className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:from-red-600 hover:to-red-700 transition-all duration-300'
@@ -366,12 +210,22 @@ const DashboardResumeForm = ({initialResumeData}) => {
                             {isEditing && (
                                 <div className='w-full max-w-md'>
                                     <ProfilePhotoUpload
+                                        initialPhotoUrl={
+                                            editableData.profilePhoto
+                                        } // Pass the existing photo URL
                                         setProfilePhoto={(downloadURL) => {
-                                            setEditableData((prev) => ({
-                                                ...prev,
-                                                imageUrl: downloadURL,
-                                            }));
-                                            handleSaveSection();
+                                            console.log(
+                                                'Photo uploaded successfully:',
+                                                downloadURL,
+                                            );
+                                            setEditableData((prev) => {
+                                                const updatedData = {
+                                                    ...prev,
+                                                    profilePhoto: downloadURL,
+                                                };
+                                                handleSaveSection(updatedData);
+                                                return updatedData;
+                                            });
                                         }}
                                     />
                                 </div>
@@ -414,7 +268,7 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                                     field,
                                                 )
                                             }
-                                            readOnly={!isEditing}
+                                            isEditing={isEditing}
                                             field={field}
                                         />
                                     </div>
@@ -436,7 +290,7 @@ const DashboardResumeForm = ({initialResumeData}) => {
                             onChange={(value) =>
                                 handleInputChange('summary', value)
                             }
-                            readOnly={!isEditing}
+                            isEditing={isEditing}
                             rows={5}
                         />
                     </div>
@@ -456,16 +310,12 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                     >
                                         {isEditing && (
                                             <button
-                                                onClick={() => {
-                                                    setEditableData((prev) => ({
-                                                        ...prev,
-                                                        experience:
-                                                            prev.experience.filter(
-                                                                (_, i) =>
-                                                                    i !== index,
-                                                            ),
-                                                    }));
-                                                }}
+                                                onClick={() =>
+                                                    removeArrayItem(
+                                                        'experience',
+                                                        index,
+                                                    )
+                                                }
                                                 className='absolute -top-3 -right-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:from-red-600 hover:to-red-700 transition-all duration-300'
                                             >
                                                 <FontAwesomeIcon
@@ -505,17 +355,16 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                                             value={
                                                                 exp[field] || ''
                                                             }
-                                                            onChange={(e) =>
+                                                            onChange={(value) =>
                                                                 handleInputChange(
                                                                     'experience',
-                                                                    e.target
-                                                                        .value,
+                                                                    value,
                                                                     index,
                                                                     field,
                                                                 )
                                                             }
-                                                            readOnly={
-                                                                !isEditing
+                                                            isEditing={
+                                                                isEditing
                                                             }
                                                             rows={3}
                                                         />
@@ -539,8 +388,8 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                                                     field,
                                                                 )
                                                             }
-                                                            readOnly={
-                                                                !isEditing
+                                                            isEditing={
+                                                                isEditing
                                                             }
                                                             field={field}
                                                         />
@@ -552,21 +401,15 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                 ))}
                             {isEditing && (
                                 <button
-                                    onClick={() => {
-                                        setEditableData((prev) => ({
-                                            ...prev,
-                                            experience: [
-                                                ...(prev.experience || []),
-                                                {
-                                                    company: '',
-                                                    position: '',
-                                                    startDate: '',
-                                                    endDate: '',
-                                                    description: '',
-                                                },
-                                            ],
-                                        }));
-                                    }}
+                                    onClick={() =>
+                                        addArrayItem('experience', {
+                                            company: '',
+                                            position: '',
+                                            startDate: '',
+                                            endDate: '',
+                                            description: '',
+                                        })
+                                    }
                                     className='w-full bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] text-black font-semibold px-6 py-3 rounded-full hover:from-[#BFECFF] hover:to-[#FFCCEA] transition-all duration-300 flex items-center justify-center'
                                 >
                                     <FontAwesomeIcon
@@ -664,8 +507,8 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                                                     field,
                                                                 )
                                                             }
-                                                            readOnly={
-                                                                !isEditing
+                                                            isEditing={
+                                                                isEditing
                                                             }
                                                         />
                                                     </div>
@@ -727,7 +570,7 @@ const DashboardResumeForm = ({initialResumeData}) => {
                                                         index,
                                                     )
                                                 }
-                                                readOnly={!isEditing}
+                                                isEditing={isEditing}
                                                 className='flex-1'
                                                 field={`skill-${index}`}
                                             />
@@ -820,12 +663,12 @@ const DashboardResumeForm = ({initialResumeData}) => {
 
     return (
         <div className='min-h-screen bg-[#FBFBFB]'>
-            <div className='container mx-auto px-4 py-16'>
+            <div className='container mx-auto px-4 py-16 '>
                 {/* Header */}
-                <div className='text-center mb-10'>
+                <div className='text-center mb-5'>
                     <div className='relative'>
-                        <div className='absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-[#CDC1FF] via-[#BFECFF] to-[#FFCCEA]'></div>
-                        <h1 className='relative text-3xl font-bold text-gray-800 mb-2'>
+                        <div className='absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-[#CDC1FF] via-[#BFECFF] to-[#FFCCEA] mb-2'></div>
+                        <h1 className='relative text-3xl font-bold text-gray-800 mb-2 mt-0'>
                             Manage Your{' '}
                             <span className='bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] bg-clip-text text-transparent'>
                                 Resumes

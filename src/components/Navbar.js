@@ -14,7 +14,7 @@ import {
 
 //import user image
 import profileImage from '../assets/images/profile.png';
-import logo from '../assets/images/logo.png';
+import logo from '../assets/images/logo image.png';
 
 const navigation = [{name: 'Templates', href: '/home', current: true}];
 
@@ -51,20 +51,20 @@ export default function Navbar() {
                             />
                         </DisclosureButton>
                     </div>
-                    <div className='flex flex-1 items-center justify-center sm:items-stretch sm:justify-start'>
+                    <div className='flex flex-1 items-center justify-between sm:items-stretch sm:justify-start'>
                         <div className='flex shrink-0 items-center'>
                             <Link
                                 to='/'
-                                className='hover:opacity-80 transition-opacity duration-300'
+                                className='hover:opacity-80 transition-opacity duration-300 ml-0 sm:ml-1'
                             >
                                 <img
                                     alt='logo'
                                     src={logo}
-                                    className='ml-1 mr-5 h-32 w-32'
+                                    className='h-64 w-64 mr-11 self-center pt-3'
                                 />
                             </Link>
                         </div>
-                        <div className='hidden sm:ml-12 mt-11 sm:block'>
+                        <div className='hidden sm:ml-12 sm:flex sm:items-center'>
                             <div className='flex space-x-4'>
                                 {navigation.map((item) => (
                                     <Link
@@ -86,7 +86,7 @@ export default function Navbar() {
                             </div>
                         </div>
                     </div>
-                    <div className='absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0'>
+                    <div className='absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-11 sm:pr-0'>
                         {user ? (
                             <>
                                 <Link
