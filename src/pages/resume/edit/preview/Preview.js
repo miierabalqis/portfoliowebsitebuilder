@@ -73,10 +73,11 @@ const Preview = () => {
         try {
             setDownloadLoading(true);
             const result = await downloadResumePDF({
+                resume: resumeData,
                 resumeRef: {
                     current: document.getElementById(
                         'resume-preview-container',
-                    ),
+                    ), // Assume this is where InpTemp renders
                 },
             });
 
@@ -183,7 +184,6 @@ const Preview = () => {
                     id='resume-preview-container'
                 >
                     <div className='max-w-4xl w-full bg-white rounded-xl shadow-lg p-8'>
-                        {/* <InpTemp resumeData={resumeData} /> */}
                         {templateId === 'template1' ? (
                             <InpTemp resumeData={resumeData} />
                         ) : templateId === 'template2' ? (
