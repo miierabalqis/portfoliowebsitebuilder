@@ -78,7 +78,7 @@ const Features = () => (
             <Feature
                 icon={faCode}
                 title='Easy to Use'
-                description='No coding required; just drag and drop.'
+                description='Realtime Preview of portfolio'
                 color='#610C9F'
             />
         </div>
@@ -160,11 +160,7 @@ const TemplateCard = ({title, description, image}) => (
             {description}
         </p>
         <button className='mt-4 text-[#CDC1FF] font-semibold hover:text-[#BFECFF] transition-colors duration-300 inline-flex items-center'>
-            Preview Template
-            <FontAwesomeIcon
-                icon={faArrowRight}
-                className='ml-2 group-hover:translate-x-1 transition-transform duration-300'
-            />
+            <FontAwesomeIcon className='ml-2 group-hover:translate-x-1 transition-transform duration-300' />
         </button>
     </div>
 );
