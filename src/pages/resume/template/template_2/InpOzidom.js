@@ -72,7 +72,7 @@ const InpOzidom = ({resumeData: incomingData}) => {
             className='font-sans antialiased'
             style={{
                 width: '800px',
-                height: '1000px',
+                // height: '1000px',
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                 margin: '0 auto',
                 overflow: 'hidden',
@@ -131,7 +131,7 @@ const InpOzidom = ({resumeData: incomingData}) => {
 
                     <div className='font-light text-lg px-2 mb-12'>
                         <h2 className='text-xl font-semibold mb-6'>Skills</h2>
-                        <div className='flex flex-wrap gap-2 mr-5'>
+                        <div className='flex flex-wrap gap-2 mr-5 mt-5'>
                             <SkillsSection skills={processedData.skills} />
                         </div>
                     </div>

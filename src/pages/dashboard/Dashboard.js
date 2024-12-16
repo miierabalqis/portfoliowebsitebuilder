@@ -1,14 +1,12 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {doc, getDoc, deleteDoc} from 'firebase/firestore';
+import {doc, deleteDoc} from 'firebase/firestore';
 import {projectFirestore} from '../../firebase/config';
 import {getAuth, onAuthStateChanged} from 'firebase/auth';
 import {
     fetchUserResumesWithTemplates,
     saveResumeEditName,
 } from '../../firebase/helpers';
-import * as ReactDOM from 'react-dom/client';
-import {downloadResumePDF} from '../resume/edit/download/Download';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faPlus,
@@ -17,18 +15,13 @@ import {
     faEdit,
     faTrash,
     faArrowRight,
-    faDownload,
-    faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
-import InpTemp from '../resume/template/template_1/InpTemp';
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [downloadLoading, setDownloadLoading] = useState({});
-    const resumeRefs = useRef({});
 
     useEffect(() => {
         const auth = getAuth();
@@ -81,74 +74,6 @@ export default function Dashboard() {
 
     const handleEditClick = (templateId, resumeId) => {
         navigate(`/dashboardform/${templateId}/${resumeId}`);
-    };
-
-    const handleDownload = async (resumeId) => {
-        try {
-            setDownloadLoading((prev) => ({...prev, [resumeId]: true}));
-
-            // Ensure data is fully fetched and rendered
-            const resumeDocRef = doc(projectFirestore, 'resumes', resumeId);
-            const resumeDoc = await getDoc(resumeDocRef);
-
-            if (!resumeDoc.exists()) {
-                throw new Error('Resume not found');
-            }
-
-            const resumeData = {...resumeDoc.data(), id: resumeId};
-
-            const container = document.createElement('div');
-            container.id = 'resume-preview-container';
-
-            // Minimal styling to ensure rendering
-            container.style.position = 'absolute';
-            container.style.top = '-9999px';
-            container.style.left = '-9999px';
-            container.style.width = '794px'; // A4 width in pixels (approx for PDF)
-            container.style.height = '1123px'; // A4 height in pixels (approx for PDF)
-            container.style.margin = '0';
-            container.style.padding = '0';
-            container.style.overflow = 'hidden';
-            container.style.paddingTop = '0px';
-            container.style.opacity = '0'; // Ensure full opacity
-            container.style.visibility = 'hidden';
-            container.style.backgroundColor = 'white';
-
-            // Ensure the container can be rendered
-            container.style.display = 'block';
-
-            document.body.appendChild(container);
-
-            // Render the template dynamically into the container
-            const tempRoot = ReactDOM.createRoot(container);
-            tempRoot.render(<InpTemp data={resumeData} />);
-
-            // Wait for fonts and rendering
-            await document.fonts.ready;
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // Increased delay
-
-            // Proceed with PDF download
-            const result = await downloadResumePDF({
-                resume: resumeData,
-                resumeRef: {current: container},
-            });
-
-            if (!result.success) {
-                throw new Error(result.error || 'Failed to generate PDF');
-            }
-        } catch (error) {
-            console.error('Download error:', error);
-            alert('Failed to download resume: ' + error.message);
-        } finally {
-            setDownloadLoading((prev) => ({...prev, [resumeId]: false}));
-            // Cleanup the container after download
-            const container = document.getElementById(
-                'resume-preview-container',
-            );
-            if (container) {
-                document.body.removeChild(container);
-            }
-        }
     };
 
     // Delete resume function
@@ -332,30 +257,6 @@ export default function Dashboard() {
                                                 className='mr-2'
                                             />
                                             Delete
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleDownload(resume.id)
-                                            }
-                                            disabled={
-                                                downloadLoading[resume.id]
-                                            }
-                                            className='group flex items-center text-black hover:text-[#CDC1FF] transition-colors duration-300 disabled:opacity-50'
-                                        >
-                                            {downloadLoading[resume.id] ? (
-                                                <FontAwesomeIcon
-                                                    icon={faSpinner}
-                                                    className='mr-2 animate-spin'
-                                                />
-                                            ) : (
-                                                <FontAwesomeIcon
-                                                    icon={faDownload}
-                                                    className='mr-2'
-                                                />
-                                            )}
-                                            {downloadLoading[resume.id]
-                                                ? 'Downloading...'
-                                                : 'Download'}
                                         </button>
                                     </div>
                                 </div>

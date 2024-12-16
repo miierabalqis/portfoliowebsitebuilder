@@ -11,6 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import InpTemp from '../resume/template/template_1/InpTemp';
 import InpOzidom from '../resume/template/template_2/InpOzidom';
+import InpGeoffrey from '../resume/template/template_3/InpGeoffrey';
 // import DashboardResumeForm from './DashboardResumeForm';
 import {downloadResumePDF} from '../resume/edit/download/Download';
 // import UnifiedResumeForm from '../resume/edit/form/UnifiedResumeForm';
@@ -172,6 +173,8 @@ const DashboardForm = () => {
                             <InpTemp resumeData={previewData} />
                         ) : templateId === 'template2' ? (
                             <InpOzidom resumeData={previewData} />
+                        ) : templateId === 'template3' ? (
+                            <InpGeoffrey resumeData={previewData} />
                         ) : null}
                     </div>
                 </div>

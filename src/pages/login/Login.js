@@ -2,7 +2,7 @@ import {useState, useEffect} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {useLogin} from '../../hooks/useLogin';
 import {useAuthContext} from '../../hooks/useAuthContext';
-import {FcGoogle} from 'react-icons/fc'; // Import Google icon
+import {FcGoogle} from 'react-icons/fc';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -24,18 +24,18 @@ export default function Login() {
 
     if (!authIsReady) {
         return (
-            <div className='min-h-screen flex items-center justify-center bg-amber-50'>
-                <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600'></div>
+            <div className='min-h-screen flex items-center justify-center bg-gradient-to-r from-[#CDC1FF]/10 via-[#BFECFF]/10 to-[#FFCCEA]/10'>
+                <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#CDC1FF]'></div>
             </div>
         );
     }
 
     return (
-        <div className='min-h-screen flex items-center justify-center bg-amber-50 px-4 sm:px-6 lg:px-8'>
-            <div className='max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg'>
+        <div className='min-h-screen flex items-center justify-center bg-gradient-to-r from-[#CDC1FF]/10 via-[#BFECFF]/10 to-[#FFCCEA]/10 px-4 sm:px-6 lg:px-8'>
+            <div className='max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-[#CDC1FF]/20'>
                 {/* Header */}
                 <div className='text-center'>
-                    <h2 className='text-3xl font-extrabold text-gray-900'>
+                    <h2 className='text-3xl font-extrabold text-black'>
                         Welcome
                     </h2>
                     <p className='mt-2 text-sm text-gray-600'>
@@ -59,7 +59,7 @@ export default function Login() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className='appearance-none block w-full px-4 py-3 rounded-lg border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 ease-in-out'
+                                className='appearance-none block w-full px-4 py-3 rounded-lg border border-[#CDC1FF]/30 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#CDC1FF] focus:border-transparent transition duration-150 ease-in-out'
                                 placeholder='Enter your email'
                             />
                         </div>
@@ -80,18 +80,10 @@ export default function Login() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className='appearance-none block w-full px-4 py-3 rounded-lg border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 ease-in-out'
+                                className='appearance-none block w-full px-4 py-3 rounded-lg border border-[#CDC1FF]/30 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#CDC1FF] focus:border-transparent transition duration-150 ease-in-out'
                                 placeholder='Enter your password'
                             />
                         </div>
-                        {/* <div className='text-right mt-1'>
-                            <Link
-                                to='/forgot-password'
-                                className='text-sm text-indigo-600 hover:text-indigo-500 font-medium'
-                            >
-                                Forgot password?
-                            </Link>
-                        </div> */}
                     </div>
 
                     {/* Error Message */}
@@ -106,46 +98,21 @@ export default function Login() {
                         <button
                             type='submit'
                             disabled={isPending}
-                            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white ${
-                                isPending
-                                    ? 'bg-indigo-400 cursor-not-allowed'
-                                    : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                            } transition duration-150 ease-in-out`}
+                            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-black
+                                ${
+                                    isPending
+                                        ? 'bg-[#CDC1FF]/50 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] hover:from-[#BFECFF] hover:to-[#FFCCEA] hover:scale-105 transform transition-all duration-300 hover:shadow-lg'
+                                }`}
                         >
-                            {isPending ? (
-                                <span className='flex items-center'>
-                                    <svg
-                                        className='animate-spin -ml-1 mr-3 h-5 w-5 text-white'
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        fill='none'
-                                        viewBox='0 0 24 24'
-                                    >
-                                        <circle
-                                            className='opacity-25'
-                                            cx='12'
-                                            cy='12'
-                                            r='10'
-                                            stroke='currentColor'
-                                            strokeWidth='4'
-                                        ></circle>
-                                        <path
-                                            className='opacity-75'
-                                            fill='currentColor'
-                                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                                        ></path>
-                                    </svg>
-                                    Signing in...
-                                </span>
-                            ) : (
-                                'Sign in'
-                            )}
+                            {isPending ? 'Signing in...' : 'Sign in'}
                         </button>
                     </div>
 
                     {/* Divider */}
                     <div className='relative'>
                         <div className='absolute inset-0 flex items-center'>
-                            <div className='w-full border-t border-gray-300'></div>
+                            <div className='w-full border-t border-[#CDC1FF]/30'></div>
                         </div>
                         <div className='relative flex justify-center text-sm'>
                             <span className='px-2 bg-white text-gray-500'>
@@ -159,7 +126,7 @@ export default function Login() {
                         <button
                             type='button'
                             onClick={loginWithGoogle}
-                            className='w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out'
+                            className='w-full flex items-center justify-center px-4 py-3 border border-[#CDC1FF]/30 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#CDC1FF] transition duration-150 ease-in-out'
                         >
                             <FcGoogle className='h-5 w-5 mr-2' />
                             Sign in with Google
@@ -172,7 +139,7 @@ export default function Login() {
                             Don't have an account?{' '}
                             <Link
                                 to='/signup'
-                                className='font-medium text-indigo-600 hover:text-indigo-500'
+                                className='font-medium text-[#CDC1FF] hover:text-[#BFECFF]'
                             >
                                 Sign up now
                             </Link>

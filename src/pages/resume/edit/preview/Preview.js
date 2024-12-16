@@ -12,6 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import InpTemp from '../../template/template_1/InpTemp';
 import InpOzidom from '../../template/template_2/InpOzidom';
+import InpGeoffrey from '../../template/template_3/InpGeoffrey';
 import {downloadResumePDF} from '../../../resume/edit/download/Download';
 
 const Preview = () => {
@@ -188,6 +189,8 @@ const Preview = () => {
                             <InpTemp resumeData={resumeData} />
                         ) : templateId === 'template2' ? (
                             <InpOzidom resumeData={resumeData} />
+                        ) : templateId === 'template3' ? (
+                            <InpGeoffrey resumeData={resumeData} />
                         ) : null}
                     </div>
                 </div>

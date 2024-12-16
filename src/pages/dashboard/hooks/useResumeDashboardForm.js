@@ -1,9 +1,11 @@
+//useResumeDashboardForm
+
 import {useState, useCallback, useRef} from 'react';
 import {doc, updateDoc} from 'firebase/firestore';
 import {projectFirestore} from '../../../firebase/config';
 import {getAuth} from 'firebase/auth';
 
-export const useResumeDashboardForm = (initialResumeData) => {
+export const useResumeDashboardForm = (initialResumeData, onUpdate) => {
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -53,50 +55,46 @@ export const useResumeDashboardForm = (initialResumeData) => {
         setIsEditing(false);
     }, []);
 
-    const handleInputChange = useCallback(
-        (section, value, index, field) => {
-            setEditableData((prev) => {
-                const newData = {...prev};
+    const handleInputChange = useCallback((section, value, index, field) => {
+        setEditableData((prev) => {
+            const newData = {...prev};
 
-                if (section === 'profilePhoto') {
-                    newData[section] = value;
-                } else if (section === 'skills') {
-                    const skills = [
-                        ...(Array.isArray(prev.skills) ? prev.skills : []),
-                    ];
-                    if (typeof index === 'number') {
-                        skills[index] = value;
-                    }
-                    newData.skills = skills;
-                } else if (typeof index === 'number' && field) {
-                    if (!Array.isArray(newData[section])) {
-                        newData[section] = [];
-                    }
-                    const sectionArray = [...newData[section]];
-                    if (!sectionArray[index]) {
-                        sectionArray[index] = {};
-                    }
-                    sectionArray[index] = {
-                        ...sectionArray[index],
-                        [field]: value,
-                    };
-                    newData[section] = sectionArray;
-                } else if (field) {
-                    if (!newData[section]) {
-                        newData[section] = {};
-                    }
-                    newData[section] = {...newData[section], [field]: value};
-                } else {
-                    newData[section] = value;
+            // Update section or field
+            if (section === 'profilePhoto') {
+                newData[section] = value;
+            } else if (section === 'skills') {
+                const skills = [
+                    ...(Array.isArray(prev.skills) ? prev.skills : []),
+                ];
+                if (typeof index === 'number') {
+                    skills[index] = value;
                 }
+                newData.skills = skills;
+            } else if (typeof index === 'number' && field) {
+                if (!Array.isArray(newData[section])) {
+                    newData[section] = [];
+                }
+                const sectionArray = [...newData[section]];
+                if (!sectionArray[index]) {
+                    sectionArray[index] = {};
+                }
+                sectionArray[index] = {
+                    ...sectionArray[index],
+                    [field]: value,
+                };
+                newData[section] = sectionArray;
+            } else if (field) {
+                if (!newData[section]) {
+                    newData[section] = {};
+                }
+                newData[section] = {...newData[section], [field]: value};
+            } else {
+                newData[section] = value;
+            }
 
-                return newData;
-            });
-
-            maintainFocus();
-        },
-        [maintainFocus],
-    );
+            return newData; // Update the state with the new data
+        });
+    }, []);
 
     const handleSaveSection = async () => {
         if (!user || !selectedResume) {

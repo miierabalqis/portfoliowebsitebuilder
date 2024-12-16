@@ -14,8 +14,8 @@ export default function Signup() {
     };
 
     return (
-        <div className='min-h-screen flex items-center justify-center bg-amber-50 px-4 sm:px-6 lg:px-8'>
-            <div className='max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg'>
+        <div className='min-h-screen flex items-center justify-center bg-gradient-to-r from-[#CDC1FF]/10 via-[#BFECFF]/10 to-[#FFCCEA]/10 px-4 sm:px-6 lg:px-8'>
+            <div className='max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-[#CDC1FF]/20'>
                 {/* Header */}
                 <div className='text-center'>
                     <h2 className='text-3xl font-extrabold text-gray-900'>
@@ -105,16 +105,16 @@ export default function Signup() {
                         <button
                             type='submit'
                             disabled={isPending}
-                            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white ${
+                            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-black ${
                                 isPending
-                                    ? 'bg-indigo-400 cursor-not-allowed'
-                                    : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                                    ? 'bg-[#CDC1FF]/50 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-[#CDC1FF] to-[#BFECFF] hover:from-[#BFECFF] hover:to-[#FFCCEA] hover:scale-105 transform transition-all duration-300 hover:shadow-lg'
                             } transition duration-150 ease-in-out`}
                         >
                             {isPending ? (
                                 <span className='flex items-center'>
                                     <svg
-                                        className='animate-spin -ml-1 mr-3 h-5 w-5 text-white'
+                                        className='animate-spin -ml-1 mr-3 h-5 w-5 text-black'
                                         xmlns='http://www.w3.org/2000/svg'
                                         fill='none'
                                         viewBox='0 0 24 24'
@@ -165,7 +165,7 @@ export default function Signup() {
                             Already have an account?{' '}
                             <Link
                                 to='/login'
-                                className='font-medium text-indigo-600 hover:text-indigo-500'
+                                className='font-semibold text-black hover:text-[#BFECFF]'
                             >
                                 Sign in
                             </Link>

@@ -13,6 +13,7 @@ import Sidebar from './Sidebar';
 import ResumeForm from '../resume/edit/form/ResumeForm';
 import InpTemp from '../resume/template/template_1/InpTemp';
 import InpOzidom from '../resume/template/template_2/InpOzidom';
+import InpGeoffrey from '../resume/template/template_3/InpGeoffrey';
 
 function Form() {
     const navigate = useNavigate();
@@ -167,6 +168,8 @@ function Form() {
                                 <InpTemp resumeData={previewData} />
                             ) : templateId === 'template2' ? (
                                 <InpOzidom resumeData={previewData} />
+                            ) : templateId === 'template3' ? (
+                                <InpGeoffrey resumeData={previewData} />
                             ) : null}
                         </div>
                     </div>
