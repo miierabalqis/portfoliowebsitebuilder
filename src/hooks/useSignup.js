@@ -1,5 +1,8 @@
 import {useState, useEffect} from 'react';
-import {projectAuth, projectFirestore} from '../firebase/config';
+import {createUserWithEmailAndPassword} from 'firebase/auth'; // Modular import for auth
+import {updateProfile} from 'firebase/auth'; // Modular import for auth
+import {projectAuth} from '../firebase/config'; // Auth initialization (no change here)
+import {getFirestore, collection, doc, setDoc} from 'firebase/firestore'; // Import Firestore functions
 import {useAuthContext} from './useAuthContext';
 
 export const useSignup = () => {
@@ -13,8 +16,9 @@ export const useSignup = () => {
         setIsPending(true);
 
         try {
-            // signup
-            const res = await projectAuth.createUserWithEmailAndPassword(
+            // Signup using modular function
+            const res = await createUserWithEmailAndPassword(
+                projectAuth,
                 email,
                 password,
             );
@@ -23,17 +27,21 @@ export const useSignup = () => {
                 throw new Error('Could not complete signup');
             }
 
-            // add display name to user
-            await res.user.updateProfile({displayName});
+            // Add display name to user
+            await updateProfile(res.user, {displayName});
 
-            // save user data in Firestore
-            await projectFirestore.collection('users').doc(res.user.uid).set({
+            // Firestore initialization
+            const db = getFirestore(); // Get the Firestore instance
+
+            // Save user data in Firestore (modular usage)
+            const userRef = doc(collection(db, 'users'), res.user.uid); // Get reference to the 'users' collection
+            await setDoc(userRef, {
                 email: res.user.email,
                 displayName,
                 createdAt: new Date(),
             });
 
-            // dispatch login action
+            // Dispatch login action
             dispatch({type: 'LOGIN', payload: res.user});
 
             if (!isCancelled) {

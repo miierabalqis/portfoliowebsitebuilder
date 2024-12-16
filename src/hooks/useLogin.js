@@ -1,14 +1,12 @@
-//useLogin.js
-
 import {useState, useEffect} from 'react';
 import {
     projectAuth,
-    projectFirestore,
     googleAuthProvider,
     signInWithPopup,
     signInWithEmailAndPassword,
 } from '../firebase/config'; // Import the required Firebase methods
 import {useAuthContext} from './useAuthContext';
+import {getFirestore, doc, getDoc, setDoc} from 'firebase/firestore'; // Import modular Firestore methods
 
 export const useLogin = () => {
     const [isCancelled, setIsCancelled] = useState(false);
@@ -58,16 +56,17 @@ export const useLogin = () => {
             // login with Google using popup
             const res = await signInWithPopup(projectAuth, googleAuthProvider);
 
+            // Firestore initialization
+            const db = getFirestore(); // Get Firestore instance using modular approach
+
             // Check if user exists in Firestore
-            const userRef = projectFirestore
-                .collection('users')
-                .doc(res.user.uid);
-            const userDoc = await userRef.get();
+            const userRef = doc(db, 'users', res.user.uid); // Reference the user document
+            const userDoc = await getDoc(userRef); // Fetch the user document
 
             // If the user does not exist in Firestore, create a new user document
-            if (!userDoc.exists) {
-                // Store the new user's data in Firestore
-                await userRef.set({
+            if (!userDoc.exists()) {
+                // Store the new user's data in Firestore (modular approach)
+                await setDoc(userRef, {
                     email: res.user.email,
                     displayName: res.user.displayName,
                     photoURL: res.user.photoURL, // Save user's Google photo (if available)
@@ -75,7 +74,7 @@ export const useLogin = () => {
                 });
             }
 
-            // dispatch login action
+            // Dispatch login action
             dispatch({type: 'LOGIN', payload: res.user});
 
             if (!isCancelled) {
