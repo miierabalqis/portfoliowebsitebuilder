@@ -8,7 +8,7 @@ import {
     saveResumeEditName,
 } from '../../firebase/helpers';
 import * as ReactDOM from 'react-dom/client';
-import {downloadResumePDF} from '../resume/edit/download/Download'; // Import the download function
+import {downloadResumePDF} from '../resume/edit/download/Download';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faPlus,
