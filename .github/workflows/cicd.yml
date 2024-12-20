@@ -25,15 +25,15 @@ jobs:
             --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }} \
             --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }} \
             --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }} \
-            -t ${{ secrets.DOCKER_HUB_USERNAME }}/<your-image-name>:${{ github.sha }} .
+            -t ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:${{ github.sha }} .
       - name: Run ESLint
-        run: podman run --rm ${{ secrets.DOCKER_HUB_USERNAME }}/<your-image-name>:${{ github.sha }} npm run lint
+        run: podman run --rm ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:${{ github.sha }} npm run lint
       - name: Push Podman image
         if: github.ref == 'refs/heads/main'
         run: |
-          podman tag ${{ secrets.DOCKER_HUB_USERNAME }}/<your-image-name>:${{ github.sha }} ${{ secrets.DOCKER_HUB_USERNAME }}/<your-image-name>:latest
-          podman push ${{ secrets.DOCKER_HUB_USERNAME }}/<your-image-name>:${{ github.sha }}
-          podman push ${{ secrets.DOCKER_HUB_USERNAME }}/<your-image-name>:latest
+          podman tag ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:${{ github.sha }} ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:latest
+          podman push ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:${{ github.sha }}
+          podman push ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:latest
 
       - name: Install Vercel CLI
         if: github.ref == 'refs/heads/main'
