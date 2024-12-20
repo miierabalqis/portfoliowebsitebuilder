@@ -29,24 +29,19 @@ jobs:
       - name: Run ESLint
         run: podman run --rm ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:${{ github.sha }} npm run lint
       - name: Push Podman image
-        if: github.ref == 'refs/heads/main'
         run: |
           podman tag ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:${{ github.sha }} ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:latest
           podman push ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:${{ github.sha }}
           podman push ${{ secrets.DOCKER_HUB_USERNAME }}/portfoliowebsitebuilder:latest
 
       - name: Install Vercel CLI
-        if: github.ref == 'refs/heads/main'
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        if: github.ref == 'refs/heads/main'
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
-        if: github.ref == 'refs/heads/main'
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel
-        if: github.ref == 'refs/heads/main'
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
