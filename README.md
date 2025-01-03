@@ -13,6 +13,8 @@ A web application to create and manage personalized portfolio websites which fea
 - Firebase
 - Vercel
 - Docker
+- Podman
+
 
 
 
@@ -101,3 +103,41 @@ import {
 
 ```
 With this setup, Firebase will be ready to use in your project for authentication, database operations, and storage!
+
+
+
+
+## Clone the Repository
+
+
+```bash
+git clone https://github.com/miierabalqis/portfoliowebsitebuilder.git 
+cd portfoliowebsitebuilder
+
+```
+2. Pull the Docker Image
+
+```bash
+ podman pull docker.io/mierabalqis/portfoliowebsitebuilder
+
+```
+
+3. Run the Container
+
+```bash
+ podman run -d -p 8081:3000 docker.io/mierabalqis/portfoliowebsitebuilder
+
+
+```
+4. Verify the Running Container
+
+```bash
+ podman ps
+```
+
+5. Access the Application
+
+http://localhost:8081
+
+    
+    
